@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width,initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #000;
+    }
+  </style>
+</head>
+<body>
+<!-- STITCH_THREEJS_START:ANIMATION_49 class="fixed inset-0 w-full h-full bg-transparent" -->
+<div class="fixed inset-0 w-full h-full bg-transparent" style="display:block;">
+<script src="https://ajax.googleapis.com/ajax/libs/threejs/r125/three.min.js"></script>
+<div id="threejs-container-ANIMATION_49" style="width:100%;height:100%"></div>
+<script>
+(function() {
+  const container = document.getElementById('threejs-container-ANIMATION_49');
+  const devicePixelRatio = window.devicePixelRatio || 1;
+  
+const width = container.clientWidth || window.innerWidth;
+const height = container.clientHeight || window.innerHeight;
+
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(75, width / height, 0.1, 1000);
+const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+renderer.setSize(width, height);
+container.appendChild(renderer.domElement);
+
+// Create Memory Nodes
+const nodes = [];
+const nodeCount = 40;
+const geometry = new THREE.SphereGeometry(0.1, 16, 16);
+const material = new THREE.MeshPhongMaterial({ 
+    color: 0x00f2ff, 
+    emissive: 0x00f2ff,
+    emissiveIntensity: 0.5,
+    transparent: true,
+    opacity: 0.8
+});
+
+const edgeMaterial = new THREE.LineBasicMaterial({ 
+    color: 0x00f2ff, 
+    transparent: true, 
+    opacity: 0.2 
+});
+
+for (let i = 0; i < nodeCount; i++) {
+    const node = new THREE.Mesh(geometry, material);
+    node.position.set(
+        (Math.random() - 0.5) * 10,
+        (Math.random() - 0.5) * 10,
+        (Math.random() - 0.5) * 10
+    );
+    node.velocity = new THREE.Vector3(
+        (Math.random() - 0.5) * 0.01,
+        (Math.random() - 0.5) * 0.01,
+        (Math.random() - 0.5) * 0.01
+    );
+    scene.add(node);
+    nodes.push(node);
+}
+
+// Connections
+const lineGeometry = new THREE.BufferGeometry();
+const linePositions = new Float32Array(nodeCount * nodeCount * 3);
+lineGeometry.setAttribute('position', new THREE.BufferAttribute(linePositions, 3));
+const lines = new THREE.LineSegments(lineGeometry, edgeMaterial);
+scene.add(lines);
+
+camera.position.z = 8;
+
+const light = new THREE.PointLight(0x00f2ff, 1, 100);
+light.position.set(0, 0, 10);
+scene.add(light);
+
+function animate() {
+    requestAnimationFrame(animate);
+    
+    let lineIdx = 0;
+    nodes.forEach((node, i) => {
+        node.position.add(node.velocity);
+        
+        // Bounce off walls
+        if (Math.abs(node.position.x) > 5) node.velocity.x *= -1;
+        if (Math.abs(node.position.y) > 5) node.velocity.y *= -1;
+        if (Math.abs(node.position.z) > 5) node.velocity.z *= -1;
+        
+        // Update lines (very simple proximity)
+        nodes.slice(i + 1).forEach(other => {
+            const dist = node.position.distanceTo(other.position);
+            if (dist < 3) {
+                linePositions[lineIdx++] = node.position.x;
+                linePositions[lineIdx++] = node.position.y;
+                linePositions[lineIdx++] = node.position.z;
+                linePositions[lineIdx++] = other.position.x;
+                linePositions[lineIdx++] = other.position.y;
+                linePositions[lineIdx++] = other.position.z;
+            }
+        });
+    });
+    
+    lineGeometry.attributes.position.needsUpdate = true;
+    renderer.render(scene, camera);
+}
+
+window.addEventListener('resize', () => {
+    const w = container.clientWidth || window.innerWidth;
+    const h = container.clientHeight || window.innerHeight;
+    camera.aspect = w / h;
+    camera.updateProjectionMatrix();
+    renderer.setSize(w, h);
+});
+
+animate();
+
+})();
+</script>
+</div>
+<!-- STITCH_THREEJS_END:ANIMATION_49 -->
+</body>
+</html>

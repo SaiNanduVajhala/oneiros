@@ -1,0 +1,118 @@
+.dream-replay {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.dream-replay__feed {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--space-sm);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.dream-replay__empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  text-align: center;
+  color: var(--text-tertiary);
+  font-size: var(--text-sm);
+}
+
+.dream-replay__event {
+  padding: var(--space-sm) var(--space-md);
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: border-color var(--duration-fast) var(--ease-default),
+              background var(--duration-fast) var(--ease-default);
+}
+
+.dream-replay__event:hover {
+  border-color: var(--border-default);
+  background: var(--bg-card-hover);
+}
+
+.dream-replay__event-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  margin-bottom: 4px;
+}
+
+.dream-replay__timestamp {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-muted);
+}
+
+.dream-replay__event-body {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-sm);
+}
+
+.dream-replay__icon {
+  font-size: var(--text-sm);
+  flex-shrink: 0;
+  width: 16px;
+  text-align: center;
+}
+
+.dream-replay__message {
+  font-size: var(--text-sm);
+  color: var(--text-primary);
+  line-height: 1.4;
+}
+
+.dream-replay__algo {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  margin-top: 4px;
+  padding-left: 24px;
+}
+
+.dream-replay__algo-label {
+  font-size: 10px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.dream-replay__algo-name {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--accent-cyan);
+}
+
+.dream-replay__flow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  margin-top: 4px;
+  padding-left: 24px;
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+}
+
+.dream-replay__flow-num {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.dream-replay__flow-arrow {
+  color: var(--text-muted);
+}
+
+.dream-replay__duration {
+  margin-left: auto;
+  color: var(--text-tertiary);
+  font-size: 10px;
+}

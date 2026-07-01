@@ -1,0 +1,65 @@
+.agent-console {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.agent-console__messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--space-md);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.agent-console__empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  text-align: center;
+  color: var(--text-tertiary);
+  font-size: var(--text-sm);
+  gap: var(--space-xs);
+}
+
+.agent-console__hint {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  margin-top: var(--space-sm);
+}
+
+.agent-console__msg {
+  padding: var(--space-sm) var(--space-md);
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+  line-height: 1.5;
+  animation: fade-in-up var(--duration-normal) var(--ease-default) both;
+}
+
+.agent-console__msg--user {
+  background: var(--accent-cyan-dim);
+  border: 1px solid var(--accent-cyan-glow);
+  align-self: flex-end;
+  max-width: 85%;
+}
+
+.agent-console__msg--assistant {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  align-self: flex-start;
+  max-width: 85%;
+}
+
+.agent-console__role {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+  margin-bottom: 2px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}

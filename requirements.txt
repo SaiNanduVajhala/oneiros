@@ -1,0 +1,7 @@
+cognee
+fastapi
+uvicorn
+scikit-learn
+numpy
+networkx
+pydantic

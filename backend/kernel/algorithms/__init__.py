@@ -1,0 +1,3 @@
+"""
+Cognitive algorithms package initialization.
+"""
