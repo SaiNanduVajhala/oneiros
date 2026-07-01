@@ -67,26 +67,30 @@ Oneiros adheres to a strict clean architecture separating domain schemas, cognit
 
 ```mermaid
 graph TD
-    User["User Client"] -->|Chat Message| WakeAgent["Wake Agent Console"]
-    WakeAgent -->|remember()| Provider["Memory Provider"]
-    
+    User["User Client"] -->|Chat Message| WakeAgent["Wake Agent"]
+    WakeAgent -->|remember| Provider["Memory Provider"]
+
     User -->|Trigger Sleep| SleepCoordinator["Sleep Coordinator"]
-    SleepCoordinator -->|Provider Lock| Provider
-    
-    subgraph Sleep Pipeline Stages
-        SleepCoordinator --> ReplayStage["N1: Replay Decay"]
-        ReplayStage --> ConsolidationStage["N2: DBSCAN Clustering"]
-        ConsolidationStage --> PruningStage["N3: Merge & Prune"]
-        PruningStage --> REMStage["REM: Concept Synthesis"]
+    SleepCoordinator -->|Lock Provider| Provider
+
+    subgraph Sleep_Pipeline
+        Replay["N1 Replay"] --> Consolidation["N2 Consolidation"]
+        Consolidation --> Pruning["N3 Pruning"]
+        Pruning --> REM["REM Synthesis"]
     end
-    
-    PruningStage -->|forget()| Provider
-    REMStage -->|improve()| Provider
-    
-    Provider -->|CogneeCloudProvider| CogneeClient["Cognee Cloud Client"]
-    Provider -->|LocalCogneeProvider| CogneeLocal["Local Cognee Vector DB"]
-    
-    SleepCoordinator -->|VisEvents SSE| Frontend["Vite/React 3D Viewport"]
+
+    SleepCoordinator --> Replay
+
+    Pruning -->|forget| Provider
+    REM -->|improve| Provider
+
+    Provider --> CloudProvider["Cognee Cloud Provider"]
+    Provider --> LocalProvider["Local Cognee Provider"]
+
+    CloudProvider --> CogneeClient["Cognee Cloud Client"]
+    LocalProvider --> CogneeLocal["Local Cognee"]
+
+    SleepCoordinator -->|SSE Events| Frontend["React Frontend"]
 ```
 
 ---
