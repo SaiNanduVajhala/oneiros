@@ -67,8 +67,8 @@ Oneiros adheres to a strict clean architecture separating domain schemas, cognit
 
 ```mermaid
 graph TD
-    User(["User Client"]) -->|Chat Message| WakeAgent["Wake Agent Console"]
-    WakeAgent -->|remember()| Provider{"Memory Provider"}
+    User["User Client"] -->|Chat Message| WakeAgent["Wake Agent Console"]
+    WakeAgent -->|remember()| Provider["Memory Provider"]
     
     User -->|Trigger Sleep| SleepCoordinator["Sleep Coordinator"]
     SleepCoordinator -->|Provider Lock| Provider
