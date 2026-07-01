@@ -205,7 +205,24 @@ Open `http://localhost:5173` in your browser.
 python -m pytest backend/tests/
 ```
 
+## 🧠 Deep Cognee API Lifecycle Integration
+
+Oneiros was built from the ground up to deeply leverage the Cognee cognitive graph lifecycle APIs to simulate memory evolution:
+
+*   **`cognee.remember(content)`**: Used continuously during the **Wake Phase** (ingesting user interactions into raw episodic memories) and in the **Replay (N1)** sleep stages.
+*   **`cognee.recall(query)`**: Invoked during the **Wake Phase** to search Cognee's persistent semantic space, providing contextual recall data to enrich agent response prompts.
+*   **`cognee.improve()`**: Called during **REM Sleep Abstraction** to trigger Cognee's internal cognitive consolidation and build semantic abstraction parent concepts from memory clusters.
+*   **`cognee.forget(data_id)`**: Called during **Pruning (N3)** to remove low-activation, redundant, or contradictory memories from the substrate, and during sleep snaps synchronization to keep Cognee as the single source of truth.
+*   **`cognee.get_memory_provenance_graph()`**: Queried at the end of the sleep cycle to retrieve the complete graph structure and power the Three.js 3D visualization.
+
+---
+
+## 🤖 AI Assistant Disclosure & Declaration
+
+As required by the WeMakeDevs Cognee Hackathon rules, we explicitly declare that **Antigravity AI coding assistant** (designed by the Google DeepMind team) was utilized for pair-programming, design exploration, backend cleanup audits, and code optimization during this project.
+
 ---
 
 ## 📄 License
 This project is licensed under the MIT License.
+
