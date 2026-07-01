@@ -34,7 +34,7 @@ app.include_router(dream_router)
 
 @app.get("/")
 async def root():
-    return {"name": "Oneiros", "version": "2.0", "status": "awake"}
+    return {"name": "Oneiros - Hackathon Cognitive OS", "version": "2.0", "status": "awake"}
 
 @app.get("/health")
 async def health_check(provider: MemoryProvider = Depends(get_memory_provider)):

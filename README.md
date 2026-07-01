@@ -1,8 +1,12 @@
 # 🌌 Oneiros Cognitive OS
 
+> [!IMPORTANT]
+> **🏆 Official Hackathon Submission Build**: Oneiros is built for the [WeMakeDevs Cognee Hackathon](https://www.wemakedevs.org/hackathons/cognee). It showcases observable, inspectable AI memory consolidation pipelines in a high-fidelity 3D web console, mapping out how an agent sleeps, consolidates, and forgets semantic memories.
+
 Oneiros is an **observable, inspectable cognitive memory operating system** built on top of [Cognee](https://github.com/cognee/cognee) to simulate the human sleep-wake cycle for artificial intelligence. 
 
 Instead of treating memory as a flat database, Oneiros models memory as a **living, evolving semantic graph** that experiences wakeful ingestion, consolidation, pruning, and abstract concept synthesis.
+
 
 ---
 

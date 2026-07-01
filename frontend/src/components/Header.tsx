@@ -26,6 +26,7 @@ export function Header({ status, onDream, onWakeUp }: HeaderProps) {
         </div>
         <h1 className="header__title">ONEIROS</h1>
         <span className="header__subtitle">Cognitive Memory OS</span>
+        <span className="header__badge">HACKATHON BUILD</span>
       </div>
 
       <div className="header__controls">
