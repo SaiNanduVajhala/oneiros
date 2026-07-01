@@ -1,159 +1,153 @@
 # 🌌 Oneiros Cognitive OS
 
-> [!IMPORTANT]
-> **🏆 Official Hackathon Submission Build**: Oneiros is built for the [WeMakeDevs Cognee Hackathon](https://www.wemakedevs.org/hackathons/cognee). It showcases observable, inspectable AI memory consolidation pipelines in a high-fidelity 3D web console, mapping out how an agent sleeps, consolidates, and forgets semantic memories.
+[![WeMakeDevs Cognee Hackathon](https://img.shields.io/badge/WeMakeDevs-Cognee_Hackathon-cyan?style=flat-square)](https://www.wemakedevs.org/hackathons/cognee)
+[![MIT License](https://img.shields.io/badge/License-MIT-blue?style=flat-square)](LICENSE)
+[![Tests Status](https://img.shields.io/badge/Tests-Passed-green?style=flat-square)](backend/tests/)
 
-Oneiros is an **observable, inspectable cognitive memory operating system** built on top of [Cognee](https://github.com/cognee/cognee) to simulate the human sleep-wake cycle for artificial intelligence. 
-
-Instead of treating memory as a flat database, Oneiros models memory as a **living, evolving semantic graph** that experiences wakeful ingestion, consolidation, pruning, and abstract concept synthesis.
-
-
----
-
-## 📅 7-Day Build Plan & Execution Timeline (June 29 – July 5)
-
-| Date | Phase | Deliverables Built & Status |
-| :--- | :--- | :--- |
-| **June 29** | **Day 1: Foundation & Dependency Inversion** | <ul><li>✅ Created project structure & domain schemas (`MemoryNode`, `MemoryEdge`, `DreamReport`)</li><li>✅ Designed abstract `MemoryProvider` contract preventing circular dependencies</li><li>✅ Initialized wake chat session handler (`WakeAgent`) and stages coordinator</li></ul> |
-| **June 30** | **Day 2: Sleep Stages & Cognitive Algorithms** | <ul><li>✅ Built **N1 Replay** implementing weighted exponential activation decay</li><li>✅ Built **N2 Consolidation** with DBSCAN semantic clustering (via scikit-learn)</li><li>✅ Built **N3 Pruning** with auto-merge ($\ge 0.995$), LLM validator ($\ge 0.90$), & contradiction prune</li><li>✅ Built **REM Abstraction** creating concept nodes & cross-cluster latent linking</li></ul> |
-| **July 1** | **Day 3: Cloud Migration, 3D Graph & Clean Audit** | <ul><li>✅ Migrated memory layer to **Cognee Cloud** via `CogneeClient` and `CogneeCloudProvider`</li><li>✅ Implemented **asynchronous write lock & queue** synchronization during sleep stages</li><li>✅ Built **WebGL Synaptic Shader Background** and **Three.js 3D Graph Viewport**</li><li>✅ Performed complete backend audit, deleting 12 dead files & securing concurrency via `asyncio.Lock()`</li></ul> |
-| **July 2** | **Day 4: Context Compression & Graph Optimization** | <ul><li>🟡 Refining vector retrieval queries to summarize high-degree memory hubs</li><li>🟡 Integrating cognitive context limits to manage window overhead</li></ul> |
-| **July 3** | **Day 5: Error Isolation & Persistence Cache** | <ul><li>🟡 Implementing resilient retry decorators on Cognee Cloud client commands</li><li>🟡 Caching coordinate layout mappings locally in SQLite backup layers</li></ul> |
-| **July 4** | **Day 6: Tactile Audio & Interface Polish** | <ul><li>🟡 Integrating dynamic sound cues for dashboard buttons & stage transitions</li><li>🟡 Polishing glassmorphism layouts, overlay panels, and responsive grids</li></ul> |
-| **July 5** | **Day 7: Performance Profiling & Launch** | <ul><li>🟡 Performance scaling verification & final project package deployment</li></ul> |
+> "AI agents continuously accumulate memories, but never truly sleep.
+> Oneiros introduces a biological sleep cycle for AI—replaying, consolidating, pruning, and abstracting memories to keep long-term cognition healthy."
 
 ---
 
-## 🎨 Observable Cognition (Interactive Dashboard)
+## ⚠️ The Problem
 
-Oneiros transitions from a background memory layer into an interactive, real-time console with two distinct operational state modes:
-
-### ☀️ Awake State (User Interaction & Memory Ingestion)
-*   **Agent Console**: Standard chat workspace where users interact with the Oneiros agent.
-*   **Memory Ingestion**: Each interaction is recorded as a raw episodic memory node in the Cognee substrate.
-*   **Live Memory Graph**: A dynamic Three.js 3D force-directed network rendered on the background, visually reflecting newly ingested nodes.
-
-### 🌙 Dreaming State (Sleep Consolidation & Abstraction)
-*   **Visual sleep cycle playback**: Users trigger a sleep cycle, transforming the workspace into a dreaming console.
-*   **3D Network Viewport**: Meshes smoothly interpolate (lerp) coordinates during stage transitions.
-    *   **Episodic Memories** are represented as floating glowing spheres.
-    *   **Abstract Concepts** are represented as 3D hexagonal cylinders.
-*   **Temporal Playback Scrubber**: Drag-and-drop timeline scrubber to travel step-by-step between sleep phases.
-*   **Explain Panel (Audit Trail)**: Clicking any node or metric exposes the exact **Input ➔ Algorithm ➔ Output** trace.
+Current AI architectures treat memory as a flat database. As agents interact with users, they continuously append raw experience statements. 
+This approach leads directly to:
+*   **Cognitive Overload**: The agent's context window grows endlessly with noise.
+*   **Duplicate Memories**: Minor variations of the same event clutter retrieval keys.
+*   **Logical Contradictions**: Conflicting statements remain unresolved.
+*   **Retrieval Decay**: Over time, search algorithms struggle to locate relevant long-term contexts, degrading the agent's response quality.
 
 ---
 
-## 🏗️ System Architecture & Data Flow
+## 💡 The Idea: Biological Sleep for AI
 
-The system is designed with a strict clean boundary: **Infrastructure** owns connectivity, **Providers** handle memory translation, **Kernel** executes algorithm logic, and the **Frontend** acts purely as a visualization renderer.
+Oneiros brings the human sleep-wake cycle directly to artificial intelligence. Instead of keeping the agent in a state of constant, awake ingestion, Oneiros splits cognition into two phases:
+
+1.  **☀️ Wake Mode (Ingestion)**: The agent talks to the user normally. Every message is recorded as a raw experience node.
+2.  **🌙 Sleep Mode (Consolidation)**: The user initiates a sleep cycle. The system executes a sequential pipeline:
+    *   **Replay**: Ranks and selects important memories.
+    *   **Cluster**: Groups semantically related experiences.
+    *   **Prune**: Merges duplicate events and resolves logical contradictions.
+    *   **REM**: Synthesizes parent abstract concepts and links related topics.
+3.  **☀️ Wake Again**: The agent wakes up with a clean, optimized, and hierarchically organized knowledge graph.
+
+---
+
+## 🎨 Demo & Visual Showcase
+
+Oneiros features a high-fidelity dark glassmorphism dashboard built with a real-time WebGL fragment shader background and a Three.js 3D force-directed network viewport.
+
+### ☀️ Active Ingestion (Awake State)
+The agent interacts with the user, showing live memory node additions in the 3D synaptic space.
+![Awake State](stitch_assets/Oneiros__Awake_State_screenshot.png)
+
+### 🌙 Cognitive Consolidation (Dreaming State)
+The dashboard shifts into a dreaming console, visually replaying, clustering, pruning, and synthesizing concepts.
+![Dreaming State](stitch_assets/Oneiros__Dreaming_Live_screenshot.png)
+![Stage Playback](stitch_assets/Oneiros__Dreaming_N2_Consolidation_screenshot.png)
+
+---
+
+## 🏆 Why Cognee?
+
+Oneiros relies entirely on **[Cognee](https://github.com/cognee/cognee)** as its core cognitive memory substrate. Cognee is fundamental because it provides:
+*   **Semantic Graph Structures**: Storing memories as nodes and edges rather than flat text vectors.
+*   **Memory Provenance**: Documenting the relationships, associations, and origin chains of every episodic node.
+*   **Dynamic Graph Queries**: Enabling real-time retrieval of sub-graphs to render on the Three.js viewport.
+*   **Ontology Expansion**: Allowing Oneiros algorithms to safely create parent Concepts and associate topic networks directly on top of Cognee's database.
+
+Rather than replacing Cognee, Oneiros acts as a cognitive orchestration layer, invoking Cognee's lifecycle APIs directly to evolve long-term memory.
+
+---
+
+## ⚙️ System Architecture
+
+Oneiros adheres to a strict clean architecture separating domain schemas, cognitive processing, infrastructure adapters, and API endpoints.
 
 ```mermaid
 graph TD
-    User([User interaction]) -->|Chat prompt| WakeAgent[Wake Agent]
+    User([User Client]) ➔|Chat Message| WakeAgent[Wake Agent Console]
+    WakeAgent ➔|remember()| Provider{Memory Provider}
     
-    subgraph Wake Phase
-        WakeAgent -->|1. Recall Context| MemoryProvider{MemoryProvider}
-        MemoryProvider -->|2. Query Graph| BackendProvider[Local / Cloud Provider]
-        BackendProvider -->|3. Query Provenance| Cognee[Cognee Substrate]
-        WakeAgent -->|4. Ingest Memory| MemoryProvider
+    User ➔|Trigger Sleep| SleepCoordinator[Sleep Coordinator]
+    SleepCoordinator ➔|Provider Lock| Provider
+    
+    subgraph Sleep Pipeline Stages
+        SleepCoordinator ➔ ReplayStage[N1: Replay Decay]
+        ReplayStage ➔ ConsolidationStage[N2: DBSCAN Clustering]
+        ConsolidationStage ➔ PruningStage[N3: Merge & Prune]
+        PruningStage ➔ REMStage[REM: Concept Synthesis]
     end
     
-    subgraph Sleep Phase
-        SleepCoordinator[Sleep Coordinator] -->|N1 Replay| ReplayStage[Replay Stage]
-        SleepCoordinator -->|N2 Consolidation| ConsolidationStage[Consolidation Stage]
-        SleepCoordinator -->|N3 Pruning| PruningStage[Pruning Stage]
-        SleepCoordinator -->|REM Abstraction| REMStage[REM Stage]
-    end
+    PruningStage ➔|forget()| Provider
+    REMStage ➔|improve()| Provider
     
-    Cognee -->|Provenance Graph| SleepCoordinator
-    ReplayStage -->|Weighted activation scores| Cognee
-    ConsolidationStage -->|DBSCAN Clusters| REMStage
-    PruningStage -->|Forget obsolete/merged nodes| Cognee
-    REMStage -->|Improve & Ingest Concepts| Cognee
+    Provider ➔|CogneeCloudProvider| CogneeClient[Cognee Cloud Client]
+    Provider ➔|LocalCogneeProvider| CogneeLocal[Local Cognee Vector DB]
     
-    SleepCoordinator -->|Server-Sent Events| SSE[SSE Controller]
-    SSE -->|VisEvents| Frontend[Vite/React 3D Viewport]
+    SleepCoordinator ➔|VisEvents SSE| Frontend[Vite/React 3D Viewport]
 ```
 
 ---
 
-## 🧠 Core Cognitive Algorithms (N1 ➔ REM)
+## 🌀 Cognitive Sleep Pipeline
 
-### 📊 N1 Stage: Replay (Weighted Activation Decay)
-During Replay, memories are ranked by an activation score to determine which items enter the active consolidation working set. The activation $A_i$ of node $i$ decays exponentially over time:
-
-$$A_i = (W_r \cdot R_i + W_f \cdot F_i + W_c \cdot C_i + W_i \cdot I_i) \cdot e^{-\lambda t}$$
-
-Where:
-*   $R_i$: **Recency score** (time elapsed since last access)
-*   $F_i$: **Frequency score** (total access count)
-*   $C_i$: **Graph centrality** (relative degree centrality of the node)
-*   $I_i$: **Importance weight** (assigned during ingestion)
-*   $\lambda$: **Decay rate** ($0.1$ default)
-
----
-
-### 🧮 N2 Stage: Consolidation (DBSCAN Clustering)
-Activated working nodes are projected into embedding spaces. A DBSCAN algorithm groups semantically close memories using cosine distance metrics:
-
-$$\text{Distance}(u, v) = 1 - \frac{u \cdot v}{\|u\|_2 \|v\|_2}$$
-
-*   **Epsilon ($\epsilon$)**: $0.25$ (maximum distance between nodes to form a cluster)
-*   **Min Samples**: $1$ (allows isolated singleton memory clusters)
-
----
-
-### ✂️ N3 Stage: Pruning (Duplicate Merge & Contradiction Resolution)
-To optimize storage density and health, the system detects logical redundancies and conflicts:
-*   **Auto-Merge**: Duplicate candidates with cosine similarity $\ge 0.995$ are merged directly.
-*   **LLM Verification**: Candidates with similarity $\ge 0.90$ are dispatched to the Gemini Reasoning Engine for semantic duplicate checking.
-*   **Contradiction Resolution**: Logical contradiction pairs are detected and resolved by pruning the logically invalid or older statement.
-
----
-
-### 🔮 REM Stage: Abstraction (Ontology Synthesis & Latent Linking)
-The system synthesizes new knowledge from clusters:
-1.  **Concept Creation**: LLM abstracts experiences in a cluster, generating a new parent `Concept` node.
-2.  **Abstraction Edges**: `ABSTRACTED_BY` relationship edges connect child memories to the new Concept.
-3.  **Latent Topic Linking**: Pairs of Concepts are compared. If semantic similarity is $\ge 0.40$, an `ASSOCIATED_WITH` relationship is generated to link different topic clusters.
-
----
-
-## 🛡️ Thread-Safe Memory Synchronization
-
-To prevent user interactions during sleep cycles from corrupting active graph consolidations, Oneiros implements a write-locking sync queue:
+During sleep mode, memories flow sequentially through four biological stages to consolidate and prune the graph:
 
 ```
-Sleep Cycle Initiated
-         ↓
-Provider Lock set (is_sleeping = True)
-         ↓
-User sends message ➔ Ingestion caught ➔ Temp ID queued (queued-xxxx)
-         ↓
-Sleep Stage processing runs uninterrupted on Cognee
-         ↓
-Sleep Cycle Complete
-         ↓
-Provider Lock released (is_sleeping = False)
-         ↓
-Queued memories flushed ➔ Processed sequentially in Cognee Cloud
+[ Ingested Raw Memories ] ➔ [ N1: Replay Decay ] ➔ [ N2: DBSCAN Grouping ] ➔ [ N3: Duplicate Merge ] ➔ [ REM: Concept Synthesis ] ➔ [ Rested Graph ]
 ```
+
+*   **N1 Replay**: Ranks memories using a time-decayed activation score, filtering the most relevant nodes.
+*   **N2 Consolidation**: Groups semantically related experiences in coordinate spaces using DBSCAN and cosine distance.
+*   **N3 Pruning**: Merges duplicates and resolves conflicting logic statements using LLM checks.
+*   **REM Abstraction**: Synthesizes parent topic Concepts and links them with latent associations.
+
+*Detailed equations and algorithmic parameters are documented in the [Cognitive Research & Validation Log](docs/cognitive_research_validation.md).*
 
 ---
 
-## 💻 Tech Stack & Project Structure
+## ⚡ Key Features
 
-### Backend
-*   **Framework**: FastAPI (python 3.13)
-*   **AI Memory Substrate**: Cognee SDK (LanceDB vector store + SQLite relational graph)
-*   **LLM & Reasoning**: Google Gemini API via custom ReasoningEngine
-*   **Testing**: Pytest & Asyncio Mock suites
+*   **🧠 Cognitive Sleep Cycle**: Algorithmic pipeline replaying, clustering, merging, and abstracting memories.
+*   **🔮 3D Synaptic Space**: High-fidelity Three.js viewport showing episodic spheres, concept hexagons, and coordinate morph animations.
+*   **🔒 Concurrency-Safe Sync**: Write-locking queue that caches incoming user writes during sleep execution to avoid database corruptions.
+*   **🛡️ Concurrency Guard**: Coroutine-safe `asyncio.Lock()` preventing simultaneous sleep cycle executions.
+*   **☁️ Cognee Cloud Ready**: Full abstraction integration mapping local operations directly to Cognee Cloud.
+*   **📈 Telemetry Explainability**: Timeline events, metrics summaries, and detailed stage execution traces.
 
-### Frontend
-*   **Core**: Vite + React 19 + TypeScript
-*   **WebGL Layer**: Custom GLSL fragment shader displaying interactive synaptic background grids
-*   **3D Network Space**: Three.js scene rendering spheres (episodic), hexagons (concepts), and line edges with camera mouse orbit controls.
-*   **Styling**: Modern dark glassmorphism (Vanilla CSS)
+---
+
+## 🔬 Technical Details & Mathematics
+
+Oneiros implements formal mathematical models to drive memory operations:
+*   **Weighted Activation Decay**: Node activation scores decay exponentially: $A_i = (W_r R_i + W_f F_i + W_c C_i + W_i I_i) \cdot e^{-\lambda t}$.
+*   **Semantic Distance**: Nodes are clustered using Cosine Similarity: $\text{Distance}(u, v) = 1 - \frac{u \cdot v}{\|u\|_2 \|v\|_2}$.
+*   **Ontology Links**: Links parent concepts if their cosine similarity is $\ge 0.40$.
+
+*For complete derivations and parameter coefficients, read the [Cognitive Research & Validation Log](docs/cognitive_research_validation.md).*
+
+---
+
+## 🛠️ Tech Stack
+
+*   **Backend Framework**: FastAPI (Python 3.13)
+*   **Memory Substrate**: Cognee SDK (LanceDB vector store + SQLite relational graph)
+*   **Reasoning Engine**: Google Gemini API via custom ReasoningEngine
+*   **Frontend Interface**: Vite + React 19 + TypeScript
+*   **WebGL Rendering**: Three.js + Custom GLSL fragment shader
+*   **Synchronization**: Asynchronous Lock & SQLite caching
+
+---
+
+## 📂 Project Structure
+
+*   [backend/](file:///c:/Users/nagendra%20prasad/Downloads/oneiros/backend) — FastAPI server, API endpoints, algorithms, and provider implementations.
+*   [frontend/](file:///c:/Users/nagendra%20prasad/Downloads/oneiros/frontend) — Vite React dashboard interface, WebGL shaders, and Three.js viewports.
+*   [docs/](file:///c:/Users/nagendra%20prasad/Downloads/oneiros/docs) — Research logs, development timeline tracking, and repository architecture specifications.
+
+*For a detailed file-by-file roadmap, see the [Folder Structure Log](docs/folder_structure.md).*
 
 ---
 
@@ -162,67 +156,52 @@ Queued memories flushed ➔ Processed sequentially in Cognee Cloud
 ### 1. Configuration
 Create a `.env` file in the workspace root directory:
 ```env
-# Provider selection: local | cloud
+# Provider: local | cloud
 ONEIROS_PROVIDER=local
 
-# Gemini
+# API Credentials
 GEMINI_API_KEY=your_gemini_api_key
-
-# Cognee Cloud (required only when ONEIROS_PROVIDER=cloud)
-COGNEE_API_KEY=your_cognee_api_key
-COGNEE_BASE_URL=https://api.cognee.ai/v1  # (Optional)
-
-# Paths
-DATABASE_PATH=backend/data/local_brain.db
+COGNEE_API_KEY=your_cognee_api_key  # (Required only for cloud provider)
 ```
 
-### 2. Backend Setup
-```bash
-# Install dependencies
-pip install -r requirements.txt
-
-# Start FastAPI server
-python backend/app.py
-```
-The backend API is now running at `http://127.0.0.1:8000`.
-
-### 3. Frontend Setup
-```bash
-# Navigate to frontend folder
-cd frontend
-
-# Install Node modules
-npm install
-
-# Start local Vite server
-npm run dev
-```
-Open `http://localhost:5173` in your browser.
-
-### 4. Running Tests
-```bash
-# Run pytest unit test suite
-python -m pytest backend/tests/
-```
-
-## 🧠 Deep Cognee API Lifecycle Integration
-
-Oneiros was built from the ground up to deeply leverage the Cognee cognitive graph lifecycle APIs to simulate memory evolution:
-
-*   **`cognee.remember(content)`**: Used continuously during the **Wake Phase** (ingesting user interactions into raw episodic memories) and in the **Replay (N1)** sleep stages.
-*   **`cognee.recall(query)`**: Invoked during the **Wake Phase** to search Cognee's persistent semantic space, providing contextual recall data to enrich agent response prompts.
-*   **`cognee.improve()`**: Called during **REM Sleep Abstraction** to trigger Cognee's internal cognitive consolidation and build semantic abstraction parent concepts from memory clusters.
-*   **`cognee.forget(data_id)`**: Called during **Pruning (N3)** to remove low-activation, redundant, or contradictory memories from the substrate, and during sleep snaps synchronization to keep Cognee as the single source of truth.
-*   **`cognee.get_memory_provenance_graph()`**: Queried at the end of the sleep cycle to retrieve the complete graph structure and power the Three.js 3D visualization.
+### 2. Startup Commands
+*   **Start Backend**:
+    ```bash
+    pip install -r requirements.txt
+    python backend/app.py
+    ```
+*   **Start Frontend**:
+    ```bash
+    cd frontend
+    npm install
+    npm run dev
+    ```
 
 ---
 
-## 🤖 AI Assistant Disclosure & Declaration
+## 🧪 Testing
 
-As required by the WeMakeDevs Cognee Hackathon rules, we explicitly declare that **Antigravity AI coding assistant** (designed by the Google DeepMind team) was utilized for pair-programming, design exploration, backend cleanup audits, and code optimization during this project.
+The backend includes a comprehensive pytest suite covering API controllers, event messaging, and sleep stage consolidation algorithms:
+```bash
+python -m pytest backend/tests/
+```
+
+---
+
+## 🔮 Future Work
+
+*   **Adaptive Decay Learning**: Self-learning decay rates based on user access frequencies.
+*   **Multi-Agent Shared Graphs**: Shared sleep consolidation pipelines for collaborative agents.
+*   **Distributed Substrates**: Integrating decentralized vector networks.
+
+---
+
+## 🤖 AI Assistant Disclosure
+
+This project was built pair-programming with the **Antigravity AI coding assistant** (Google DeepMind team) to co-author, optimize, and clean the repository structures.
 
 ---
 
 ## 📄 License
-This project is licensed under the MIT License.
 
+This project is licensed under the MIT License. See [LICENSE](LICENSE) for details.
