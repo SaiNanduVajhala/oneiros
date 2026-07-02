@@ -18,6 +18,8 @@ function App() {
     graphEdges,
     snapshots,
     chatMessages,
+    chatHistory,
+    clearChatHistory,
     selectedItem,
     startDream,
     wakeUp,
@@ -63,7 +65,13 @@ function App() {
         {isAwake ? (
           <div className="dashboard-awake stagger">
             <div className="grid-area-console">
-              <AgentConsole messages={chatMessages} onSend={sendMessage} isLoading={isSending} />
+              <AgentConsole
+                messages={chatMessages}
+                historyMessages={chatHistory}
+                onSend={sendMessage}
+                onClearHistory={clearChatHistory}
+                isLoading={isSending}
+              />
             </div>
 
             <div className="dashboard-awake__center">

@@ -12,6 +12,8 @@ export interface DreamState {
   graphEdges: MemoryEdge[];
   snapshots: StageSnapshot[];
   chatMessages: ChatMessage[];
+  chatHistory: ChatMessage[];
+  clearChatHistory: () => void;
   selectedItem: { type: string; data: unknown } | null;
   startDream: () => Promise<void>;
   wakeUp: () => void;
@@ -28,7 +30,8 @@ export function useDreamState(): DreamState {
   const [graphNodes, setGraphNodes] = useState<MemoryNode[]>([]);
   const [graphEdges, setGraphEdges] = useState<MemoryEdge[]>([]);
   const [snapshots, setSnapshots] = useState<StageSnapshot[]>([]);
-  const [chatMessages, setChatMessages] = useState<ChatMessage[]>(() => {
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
+  const [chatHistory, setChatHistory] = useState<ChatMessage[]>(() => {
     try {
       const saved = localStorage.getItem('oneiros_chat_history');
       return saved ? JSON.parse(saved) : [];
@@ -42,11 +45,20 @@ export function useDreamState(): DreamState {
 
   useEffect(() => {
     try {
-      localStorage.setItem('oneiros_chat_history', JSON.stringify(chatMessages));
+      localStorage.setItem('oneiros_chat_history', JSON.stringify(chatHistory));
     } catch (err) {
       console.error('Failed to save chat history to localStorage:', err);
     }
-  }, [chatMessages]);
+  }, [chatHistory]);
+
+  const clearChatHistory = useCallback(() => {
+    setChatHistory([]);
+    try {
+      localStorage.removeItem('oneiros_chat_history');
+    } catch (err) {
+      console.error('Failed to clear chat history:', err);
+    }
+  }, []);
 
   // Connect SSE
   const connectSSE = useCallback(() => {
@@ -150,6 +162,7 @@ export function useDreamState(): DreamState {
       timestamp: new Date().toISOString(),
     };
     setChatMessages(prev => [...prev, userMsg]);
+    setChatHistory(prev => [...prev, userMsg]);
     setIsSending(true);
 
     try {
@@ -165,13 +178,16 @@ export function useDreamState(): DreamState {
         timestamp: new Date().toISOString(),
       };
       setChatMessages(prev => [...prev, assistantMsg]);
+      setChatHistory(prev => [...prev, assistantMsg]);
       await fetchResults();
     } catch {
-      setChatMessages(prev => [...prev, {
+      const errMsg: ChatMessage = {
         role: 'assistant',
         content: 'Connection error — is the backend running?',
         timestamp: new Date().toISOString(),
-      }]);
+      };
+      setChatMessages(prev => [...prev, errMsg]);
+      setChatHistory(prev => [...prev, errMsg]);
     } finally {
       setIsSending(false);
     }
@@ -190,6 +206,8 @@ export function useDreamState(): DreamState {
     graphEdges,
     snapshots,
     chatMessages,
+    chatHistory,
+    clearChatHistory,
     selectedItem,
     startDream,
     wakeUp,
