@@ -208,12 +208,34 @@ We performed a deep-cleaning audit of the backend directory structure, removing 
 ### 12.4 Port Robustness (CORS allowed origins)
 *   Updated [app.py](file:///c:/Users/nagendra%20prasad/Downloads/oneiros/backend/app.py) CORS permissions list to allow connection origins from ports `5174` and `5175` to support smooth frontend dashboard interactions when Vite dynamically binds to alternative ports.
 
----
-
-## 13. WeMakeDevs Cognee Hackathon Disclosures
+## 11. WeMakeDevs Cognee Hackathon Disclosures
 *   **AI Assistant Declaration**: Built using Google DeepMind's **Antigravity AI coding assistant** to co-author, debug, audit, and clean the repository structures.
 
+---
 
+## 12. Phase 12 — Human-Crafted Premium UI & Visual Redesign
 
+We successfully executed a complete frontend redesign to remove standard "AI-slop" elements and deliver a highly-polished, human-crafted design optimized for the judges.
 
+### 12.1 The "Warm Observatory" Palette
+*   **Decoupled AI-Slop Clichés**: Completely stripped the generic dark blue/cyan/purple gradient accents common in generic AI templates.
+*   **Warm Color Hierarchy**: Introduced a warm, premium color scheme:
+    *   **Primary Accent**: Warm gold/amber (`#E8A43A` / `var(--accent-primary)`) for concept nodes, badge headers, and main actions.
+    *   **Secondary Accent**: Soft sky blue (`#5B9BD5` / `var(--accent-secondary)`) for episodic memories and metadata traces.
+    *   **Semantic Highlights**: Sage green (`#6BAF7A` / `var(--accent-success)`) for active states and resolved metrics, burnt sienna (`#C8724E`) for warning states, and muted coral (`#D4655C`) for error triggers.
+    *   **Obsidian Depth**: Set the background to true warm obsidian blacks (`#09090b` base) with warm grey borders (`rgba(255,255,255,0.06)`).
 
+### 12.2 Layout Simplification (Eliminated Dead Weight)
+*   **Purged Broken Sidebar**: Removed the redundant side-navigation bar which previously suffered from un-rendered Google Material Symbols (showing raw text like `forum`, `hub`, `waves`). This freed up `88px` of left-hand viewport width.
+*   **Purged Dead Footer**: Removed the dummy footer containing inactive links and fake copyright notices.
+*   **Shader Resource Optimization**: Deleted the invisible WebGL canvas shader background (`ShaderBackground`) to prevent wasting client GPU resources on an unnoticeable background layer.
+*   **Refined Grid Proportions**: Expanded the Awake and Dreaming grids to use clean margins and optimized column widths (`320px 1fr 340px`) utilizing every pixel of screen space.
+
+### 12.3 Explainability Color Alignment
+*   **ExplainPanel Upgrades**: Replaced all old hardcoded cyan/purple/emerald inline colors in [ExplainPanel.tsx](file:///c:/Users/nagendra%20prasad/Downloads/oneiros/frontend/src/components/ExplainPanel.tsx) with the new warm design variables. Renders diagnostic flows using sky blue (inputs), amber (algorithms), and sage green (outputs).
+*   **MRI status colors**: Updated [CognitiveMRI.tsx](file:///c:/Users/nagendra%20prasad/Downloads/oneiros/frontend/src/components/CognitiveMRI.tsx) health state indicators and radial canvas arc gradients to reflect the new warm tokens (`success`, `warning`, `error`).
+
+### 12.4 Verification Status
+*   **Vite Build Check**: `npm run build` compiles successfully in **509ms** with zero TypeScript or bundler errors.
+*   **Pytest Status**: Backend pytest suite passes cleanly with **9/9 tests passed**.
+*   **Git Integrity**: All files staged, verified, and committed locally to `main`.
