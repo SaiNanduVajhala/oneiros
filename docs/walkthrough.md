@@ -189,7 +189,28 @@ We removed the local SQLite and LanceDB provider fallbacks completely, solidifyi
 
 ---
 
-## 12. WeMakeDevs Cognee Hackathon Disclosures
+## 12. Phase 12 — Backend Workspace Cleanup & CORS Robustness
+
+We performed a deep-cleaning audit of the backend directory structure, removing dead/orphan modules, untracking generated SQLite binaries from source control, and ensuring development port robustness.
+
+### 12.1 Dead Module Deletions
+*   Deleted `backend/kernel/scheduler/` directory (`scheduler.py`, `triggers.py`, and `policies.py`) which contained unused background scheduling cron runners.
+*   Deleted the empty placeholder directory `backend/kernel/memory/`.
+*   Removed the duplicate database file `backend/data/local_brain.db` (which was a legacy database path).
+
+### 12.2 Scratch File Deletions
+*   Removed redundant scratch test scripts under the root `scratch/` directory (`check_env.py`, `test_cognee_serve.py`, and `test_cognee_sync.py`), keeping only core automated test files in `backend/tests/`.
+
+### 12.3 Database Untracking & Ignoring
+*   Untracked the visual layout coordinate database file `backend/infrastructure/data/local_brain.db` from Git history using `git rm --cached`.
+*   Configured `.gitignore` with `backend/**/*.db` to prevent local cache databases from being committed or causing merge conflicts during evaluation.
+
+### 12.4 Port Robustness (CORS allowed origins)
+*   Updated [app.py](file:///c:/Users/nagendra%20prasad/Downloads/oneiros/backend/app.py) CORS permissions list to allow connection origins from ports `5174` and `5175` to support smooth frontend dashboard interactions when Vite dynamically binds to alternative ports.
+
+---
+
+## 13. WeMakeDevs Cognee Hackathon Disclosures
 *   **AI Assistant Declaration**: Built using Google DeepMind's **Antigravity AI coding assistant** to co-author, debug, audit, and clean the repository structures.
 
 
