@@ -16,8 +16,8 @@ from memory.provider import MemoryProvider
 from infrastructure.configuration.settings import register_memory_provider, settings
 
 # Expose keys so Cognee libraries resolve offline
-os.environ["MOCK_EMBEDDING"] = "true"
-os.environ["EMBEDDING_PROVIDER"] = "mock"
+os.environ["MOCK_EMBEDDING"] = os.environ.get("MOCK_EMBEDDING", "false")
+os.environ["EMBEDDING_PROVIDER"] = os.environ.get("EMBEDDING_PROVIDER", "gemini")
 os.environ["LLM_API_KEY"] = settings.llm_api_key
 
 def get_memory_provider() -> MemoryProvider:

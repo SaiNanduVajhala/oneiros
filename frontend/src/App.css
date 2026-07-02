@@ -9,6 +9,17 @@
   margin-top: 64px; /* Header height */
 }
 
+.dashboard-layout .panel {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.dashboard-layout .playback-bar.panel {
+  height: auto;
+}
+
 /* ─── Awake State ─── */
 .dashboard-awake {
   display: grid;

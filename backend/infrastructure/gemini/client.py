@@ -24,12 +24,15 @@ class GeminiClient:
 
     async def generate_response(self, system_instruction: str, user_prompt: str) -> str:
         """
-        Executes a completion model call to Gemini, with an offline fallback for mock keys.
+        Executes a completion model call to the LLM model, with an offline fallback for mock keys.
         """
-        api_key = os.environ.get("LLM_API_KEY", "mock-key")
-        
+        if self.model_name.startswith("groq/"):
+            api_key = os.environ.get("GROQ_API_KEY", "mock-key")
+        else:
+            api_key = os.environ.get("GEMINI_API_KEY", os.environ.get("LLM_API_KEY", "mock-key"))
+            
         # If API key is set to 'mock-key', return deterministic offline stubs to pass verification tests
-        if api_key == "mock-key" or self.model_name == "mock":
+        if api_key == "mock-key" or api_key == "" or self.model_name == "mock":
             logger.info("GeminiClient: Offline mock-key active. Generating local stub response.")
             system_lower = system_instruction.lower()
             prompt_lower = user_prompt.lower()

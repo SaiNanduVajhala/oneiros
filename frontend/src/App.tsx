@@ -6,6 +6,7 @@ import { GraphViewport } from './components/GraphViewport';
 import { DreamReplay } from './components/DreamReplay';
 import { CognitiveMRI } from './components/CognitiveMRI';
 import { ExplainPanel } from './components/ExplainPanel';
+import { DevDrawer } from './components/DevDrawer';
 import './App.css';
 
 function App() {
@@ -29,6 +30,7 @@ function App() {
   } = useDreamState();
 
   const [playbackIndex, setPlaybackIndex] = useState<number>(-1);
+  const [isDevDrawerOpen, setIsDevDrawerOpen] = useState<boolean>(false);
 
   const isPlayingBack = playbackIndex >= 0 && playbackIndex < snapshots.length;
   const currentSnapshot = isPlayingBack ? snapshots[playbackIndex] : null;
@@ -59,7 +61,7 @@ function App() {
 
   return (
     <>
-      <Header status={status} onDream={startDream} onWakeUp={wakeUp} />
+      <Header status={status} onDream={startDream} onWakeUp={wakeUp} onToggleDev={() => setIsDevDrawerOpen(prev => !prev)} />
 
       <div className="dashboard-layout">
         {isAwake ? (
@@ -71,6 +73,8 @@ function App() {
                 onSend={sendMessage}
                 onClearHistory={clearChatHistory}
                 isLoading={isSending}
+                nodes={displayNodes}
+                onNodeClick={handleNodeClick}
               />
             </div>
 
@@ -156,6 +160,10 @@ function App() {
       </div>
 
       <ExplainPanel item={selectedItem} onClose={() => setSelectedItem(null)} />
+
+      {import.meta.env.VITE_DEV_MODE === 'true' && (
+        <DevDrawer isOpen={isDevDrawerOpen} onClose={() => setIsDevDrawerOpen(false)} />
+      )}
     </>
   );
 }

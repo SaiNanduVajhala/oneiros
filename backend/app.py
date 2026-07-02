@@ -16,6 +16,7 @@ from config import get_memory_provider
 from memory.provider import MemoryProvider
 from api.chat import router as chat_router
 from api.dream import router as dream_router
+from api.debug import router as debug_router
 
 app = FastAPI(title="Oneiros - Cognitive Memory Operating System Kernel")
 
@@ -35,6 +36,7 @@ app.add_middleware(
 # Include sub-routers
 app.include_router(chat_router)
 app.include_router(dream_router)
+app.include_router(debug_router)
 
 @app.get("/")
 async def root():

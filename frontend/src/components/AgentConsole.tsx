@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import type { ChatMessage } from '../types';
+import type { ChatMessage, MemoryNode } from '../types';
 import './AgentConsole.css';
 
 interface AgentConsoleProps {
@@ -8,6 +8,8 @@ interface AgentConsoleProps {
   onSend: (msg: string) => void;
   onClearHistory?: () => void;
   isLoading?: boolean;
+  nodes?: MemoryNode[];
+  onNodeClick?: (node: MemoryNode) => void;
 }
 
 export function AgentConsole({
@@ -16,23 +18,29 @@ export function AgentConsole({
   onSend,
   onClearHistory,
   isLoading = false,
+  nodes = [],
+  onNodeClick,
 }: AgentConsoleProps) {
-  const [activeTab, setActiveTab] = useState<'console' | 'history'>('console');
+  const [activeTab, setActiveTab] = useState<'console' | 'history' | 'memories'>('console');
   const [searchQuery, setSearchQuery] = useState('');
   const [input, setInput] = useState('');
   const scrollRef = useRef<HTMLDivElement>(null);
+  
+  // Ref to track scroll of lists separately
+  const listScrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      if (scrollRef.current) {
-        scrollRef.current.scrollTo({
-          top: scrollRef.current.scrollHeight,
+      const targetScroll = activeTab === 'console' ? scrollRef.current : listScrollRef.current;
+      if (targetScroll) {
+        targetScroll.scrollTo({
+          top: targetScroll.scrollHeight,
           behavior: 'smooth'
         });
       }
     }, 80);
     return () => clearTimeout(timer);
-  }, [messages, isLoading, activeTab]);
+  }, [messages, isLoading, activeTab, nodes]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -43,6 +51,11 @@ export function AgentConsole({
 
   const filteredHistory = historyMessages.filter(msg =>
     msg.content.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const filteredNodes = nodes.filter(node =>
+    node.content.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    node.semantic_tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()))
   );
 
   return (
@@ -60,6 +73,15 @@ export function AgentConsole({
             onClick={() => setActiveTab('history')}
           >
             History
+          </button>
+          <button
+            className={`agent-console__tab-btn ${activeTab === 'memories' ? 'agent-console__tab-btn--active' : ''}`}
+            onClick={() => {
+              setActiveTab('memories');
+              setSearchQuery(''); // Reset search when switching to memories
+            }}
+          >
+            Memories
           </button>
         </div>
       </div>
@@ -111,7 +133,7 @@ export function AgentConsole({
             </button>
           </form>
         </>
-      ) : (
+      ) : activeTab === 'history' ? (
         <>
           <div className="agent-console__history-controls">
             <input
@@ -127,7 +149,7 @@ export function AgentConsole({
               </button>
             )}
           </div>
-          <div className="agent-console__messages" ref={scrollRef}>
+          <div className="agent-console__messages" ref={listScrollRef}>
             {filteredHistory.length === 0 ? (
               <div className="agent-console__empty">
                 <p>{searchQuery ? "No matching messages found." : "No saved chat history."}</p>
@@ -144,6 +166,51 @@ export function AgentConsole({
                     )}
                   </div>
                   <p>{msg.content}</p>
+                </div>
+              ))
+            )}
+          </div>
+        </>
+      ) : (
+        <>
+          <div className="agent-console__history-controls">
+            <input
+              className="chat-input agent-console__search-input"
+              type="text"
+              placeholder="Search facts and concepts..."
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+            />
+          </div>
+          <div className="agent-console__messages memories-tab-list" ref={listScrollRef}>
+            {filteredNodes.length === 0 ? (
+              <div className="agent-console__empty">
+                <p>{searchQuery ? "No matching memories found." : "No facts stored yet."}</p>
+              </div>
+            ) : (
+              filteredNodes.map((node) => (
+                <div
+                  key={node.id}
+                  className="memory-fact-card"
+                  onClick={() => onNodeClick && onNodeClick(node)}
+                  style={{ cursor: onNodeClick ? 'pointer' : 'default' }}
+                >
+                  <div className="memory-fact-card__header">
+                    <span className={`memory-fact-card__source source--${node.source}`}>
+                      {node.source}
+                    </span>
+                    <span className="memory-fact-card__importance">
+                      Imp: {node.importance.toFixed(2)}
+                    </span>
+                  </div>
+                  <p className="memory-fact-card__content">{node.content}</p>
+                  {node.semantic_tags && node.semantic_tags.length > 0 && (
+                    <div className="memory-fact-card__tags">
+                      {node.semantic_tags.map(t => (
+                        <span key={t} className="memory-fact-card__tag">#{t}</span>
+                      ))}
+                    </div>
+                  )}
                 </div>
               ))
             )}
