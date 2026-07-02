@@ -28,10 +28,25 @@ export function useDreamState(): DreamState {
   const [graphNodes, setGraphNodes] = useState<MemoryNode[]>([]);
   const [graphEdges, setGraphEdges] = useState<MemoryEdge[]>([]);
   const [snapshots, setSnapshots] = useState<StageSnapshot[]>([]);
-  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>(() => {
+    try {
+      const saved = localStorage.getItem('oneiros_chat_history');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
   const [selectedItem, setSelectedItem] = useState<{ type: string; data: unknown } | null>(null);
   const [isSending, setIsSending] = useState<boolean>(false);
   const eventSourceRef = useRef<EventSource | null>(null);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('oneiros_chat_history', JSON.stringify(chatMessages));
+    } catch (err) {
+      console.error('Failed to save chat history to localStorage:', err);
+    }
+  }, [chatMessages]);
 
   // Connect SSE
   const connectSSE = useCallback(() => {
