@@ -40,12 +40,12 @@ Oneiros features a high-fidelity dark glassmorphism dashboard built with a real-
 
 ### ☀️ Active Ingestion (Awake State)
 The agent interacts with the user, showing live memory node additions in the 3D synaptic space.
-![Awake State](stitch_assets/Oneiros__Awake_State_screenshot.png)
+![Awake State](docs/images/Oneiros__Awake_State_screenshot.png)
 
 ### 🌙 Cognitive Consolidation (Dreaming State)
 The dashboard shifts into a dreaming console, visually replaying, clustering, pruning, and synthesizing concepts.
-![Dreaming State](stitch_assets/Oneiros__Dreaming_Live_screenshot.png)
-![Stage Playback](stitch_assets/Oneiros__Dreaming_N2_Consolidation_screenshot.png)
+![Dreaming State](docs/images/Oneiros__Dreaming_Live_screenshot.png)
+![Stage Playback](docs/images/Oneiros__Dreaming_N2_Consolidation_screenshot.png)
 
 ---
 
