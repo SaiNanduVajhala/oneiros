@@ -9,9 +9,9 @@ interface CognitiveMRIProps {
 }
 
 function getHealthColor(v: number): string {
-  if (v >= 75) return 'var(--accent-emerald)';
-  if (v >= 45) return 'var(--accent-amber)';
-  return 'var(--accent-rose)';
+  if (v >= 75) return 'var(--accent-success)';
+  if (v >= 45) return 'var(--accent-warning)';
+  return 'var(--accent-error)';
 }
 
 export function CognitiveMRI({ metrics, report, healthBefore }: CognitiveMRIProps) {
@@ -44,7 +44,7 @@ export function CognitiveMRI({ metrics, report, healthBefore }: CognitiveMRIProp
     // Background arc
     ctx.beginPath();
     ctx.arc(cx, cy, r, startAngle, endAngle);
-    ctx.strokeStyle = '#1e293b';
+    ctx.strokeStyle = '#2a2a31';
     ctx.lineWidth = lineWidth;
     ctx.lineCap = 'round';
     ctx.stroke();
@@ -69,7 +69,7 @@ export function CognitiveMRI({ metrics, report, healthBefore }: CognitiveMRIProp
     ctx.textBaseline = 'middle';
     ctx.fillText(`${typeof health === 'number' ? health.toFixed(0) : '0'}`, cx, cy - 6);
 
-    ctx.fillStyle = '#64748b';
+    ctx.fillStyle = '#6E6E78';
     ctx.font = `400 11px 'Geist', system-ui`;
     ctx.fillText('HEALTH', cx, cy + 16);
   }, [health, hasData]);
@@ -100,8 +100,8 @@ export function CognitiveMRI({ metrics, report, healthBefore }: CognitiveMRIProp
               <span
                 className="cognitive-mri__status-badge"
                 style={{
-                  color: health >= 75 ? 'var(--accent-emerald)' : health >= 45 ? 'var(--accent-amber)' : 'var(--accent-rose)',
-                  borderColor: health >= 75 ? 'var(--accent-emerald)' : health >= 45 ? 'var(--accent-amber)' : 'var(--accent-rose)',
+                  color: health >= 75 ? 'var(--accent-success)' : health >= 45 ? 'var(--accent-warning)' : 'var(--accent-error)',
+                  borderColor: health >= 75 ? 'var(--accent-success)' : health >= 45 ? 'var(--accent-warning)' : 'var(--accent-error)',
                   borderWidth: '1px',
                   borderStyle: 'solid',
                   padding: '2px 8px',
@@ -131,28 +131,28 @@ export function CognitiveMRI({ metrics, report, healthBefore }: CognitiveMRIProp
           
           <div className="cognitive-mri__story-item">
             <span className="cognitive-mri__story-label">Memory Health Target</span>
-            <span className="cognitive-mri__story-value" style={{ color: 'var(--accent-emerald)', fontWeight: 600 }}>
+            <span className="cognitive-mri__story-value" style={{ color: 'var(--accent-success)', fontWeight: 600 }}>
               {hasData && healthBefore > 0 ? `${healthBefore.toFixed(0)}% → ${health.toFixed(0)}%` : `${health.toFixed(0)}%`}
             </span>
           </div>
 
           <div className="cognitive-mri__story-item">
             <span className="cognitive-mri__story-label">Redundant Merges</span>
-            <span className="cognitive-mri__story-value" style={{ color: 'var(--accent-cyan)' }}>
+            <span className="cognitive-mri__story-value" style={{ color: 'var(--accent-secondary)' }}>
               {metrics ? `${metrics.duplicates_merged} merged` : '0 merged'}
             </span>
           </div>
 
           <div className="cognitive-mri__story-item">
             <span className="cognitive-mri__story-label">Logical Conflicts Resolved</span>
-            <span className="cognitive-mri__story-value" style={{ color: 'var(--accent-amber)' }}>
+            <span className="cognitive-mri__story-value" style={{ color: 'var(--accent-warning)' }}>
               {metrics ? `${metrics.contradictions_resolved} fixed` : '0 fixed'}
             </span>
           </div>
 
           <div className="cognitive-mri__story-item">
             <span className="cognitive-mri__story-label">Abstract Concepts Synthesized</span>
-            <span className="cognitive-mri__story-value" style={{ color: 'var(--accent-violet)' }}>
+            <span className="cognitive-mri__story-value" style={{ color: 'var(--accent-primary)' }}>
               {metrics ? `${metrics.concepts_generated} created` : '0 created'}
             </span>
           </div>

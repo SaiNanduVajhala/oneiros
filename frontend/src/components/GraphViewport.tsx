@@ -124,15 +124,15 @@ export function GraphViewport({ nodes, edges, events, onNodeClick }: GraphViewpo
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     mountPoint.appendChild(renderer.domElement);
 
-    // 4. Lights
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.3);
+    // 4. Lights — warm-toned
+    const ambientLight = new THREE.AmbientLight(0xfff5e6, 0.35);
     scene.add(ambientLight);
 
-    const pointLight = new THREE.PointLight(0x00f2ff, 1, 100);
+    const pointLight = new THREE.PointLight(0xe8a43a, 0.9, 100);
     pointLight.position.set(0, 0, 10);
     scene.add(pointLight);
 
-    const secondaryLight = new THREE.PointLight(0x7c3aed, 0.8, 100);
+    const secondaryLight = new THREE.PointLight(0x5b9bd5, 0.6, 100);
     secondaryLight.position.set(5, 5, -5);
     scene.add(secondaryLight);
 
@@ -183,10 +183,10 @@ export function GraphViewport({ nodes, edges, events, onNodeClick }: GraphViewpo
         const isActivated = activatedRef.current.has(node.id);
         const isFaded = fadedRef.current.has(node.id);
 
-        let colorVal = 0x3b82f6; // Episodic Blue
-        if (isConcept) colorVal = 0x7c3aed; // Concept Violet
-        if (isActivated) colorVal = 0x00e5c7; // Activated Cyan
-        if (isFaded) colorVal = 0x475569; // Pruned Grey
+        let colorVal = 0x5b9bd5; // Episodic Sky Blue
+        if (isConcept) colorVal = 0xe8a43a; // Concept Amber
+        if (isActivated) colorVal = 0x6baf7a; // Activated Sage
+        if (isFaded) colorVal = 0x4a4a54; // Pruned Warm Grey
 
         const [hx, hy, hz] = hashPosition3D(node.id);
         let tx = hx;
@@ -251,7 +251,7 @@ export function GraphViewport({ nodes, edges, events, onNodeClick }: GraphViewpo
         if (!srcState || !tgtState) continue;
 
         const lineMat = new THREE.LineBasicMaterial({
-          color: edge.type === 'ABSTRACTED_BY' ? 0x7c3aed : 0x3b82f6,
+          color: edge.type === 'ABSTRACTED_BY' ? 0xe8a43a : 0x5b9bd5,
           transparent: true,
           opacity: 0.0, // Start transparent
         });
@@ -578,7 +578,7 @@ export function GraphViewport({ nodes, edges, events, onNodeClick }: GraphViewpo
       </div>
       <div className="graph-viewport__legend">
         <span className="graph-viewport__legend-item">
-          <span className="graph-viewport__legend-dot" style={{ background: '#3b82f6' }} />
+          <span className="graph-viewport__legend-dot" style={{ background: '#5B9BD5' }} />
           Episodic
         </span>
         <span className="graph-viewport__legend-item">
@@ -586,11 +586,11 @@ export function GraphViewport({ nodes, edges, events, onNodeClick }: GraphViewpo
           Concept
         </span>
         <span className="graph-viewport__legend-item">
-          <span className="graph-viewport__legend-dot" style={{ background: '#00e5c7' }} />
+          <span className="graph-viewport__legend-dot" style={{ background: '#6BAF7A' }} />
           Activated
         </span>
         <span className="graph-viewport__legend-item">
-          <span className="graph-viewport__legend-dot" style={{ background: '#475569', opacity: 0.4 }} />
+          <span className="graph-viewport__legend-dot" style={{ background: '#4A4A54', opacity: 0.5 }} />
           Pruned
         </span>
       </div>

@@ -1,137 +1,32 @@
-/* Oneiros — App layout CSS */
+/* Oneiros — App Layout */
 
-/* Sidebar navigation */
-.sidebar {
-  position: fixed;
-  left: 0;
-  top: 64px;
-  bottom: 48px;
-  width: 72px;
-  background: rgba(14, 14, 14, 0.4);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border-right: 1px solid rgba(132, 148, 149, 0.1);
-  display: flex;
-  flex-direction: column;
-  padding: var(--space-md) 0;
-  transition: width var(--duration-normal) var(--ease-default);
-  z-index: 40;
-  overflow: hidden;
-}
-
-.sidebar:hover {
-  width: 240px;
-}
-
-.sidebar__brand-area {
-  padding: var(--space-sm) 24px;
-  margin-bottom: var(--space-md);
-  white-space: nowrap;
-  opacity: 0;
-  transition: opacity var(--duration-fast);
-}
-
-.sidebar:hover .sidebar__brand-area {
-  opacity: 1;
-}
-
-.sidebar__brand-title {
-  font-family: var(--font-sans);
-  font-size: var(--text-md);
-  font-weight: 600;
-  color: var(--accent-cyan);
-  text-shadow: 0 0 8px rgba(0, 229, 199, 0.3);
-}
-
-.sidebar__brand-sub {
-  font-family: var(--font-mono);
-  font-size: 10px;
-  color: var(--text-muted);
-}
-
-.sidebar__nav {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-xs);
-  flex: 1;
-}
-
-.sidebar__item {
-  display: flex;
-  align-items: center;
-  gap: var(--space-md);
-  padding: var(--space-sm) 24px;
-  color: var(--text-secondary);
-  text-decoration: none;
-  font-family: var(--font-mono);
-  font-size: var(--text-sm);
-  transition: all var(--duration-fast);
-  white-space: nowrap;
-  border-left: 2px solid transparent;
-  cursor: pointer;
-}
-
-.sidebar__item:hover {
-  background: rgba(255, 255, 255, 0.03);
-  color: var(--text-primary);
-}
-
-.sidebar__item--active {
-  color: var(--accent-cyan);
-  border-left: 2px solid var(--accent-cyan);
-  background: rgba(0, 229, 199, 0.05);
-}
-
-.sidebar__item-icon {
-  font-size: 20px;
-  width: 24px;
-  text-align: center;
-  flex-shrink: 0;
-}
-
-.sidebar__item-label {
-  opacity: 0;
-  transition: opacity var(--duration-fast);
-}
-
-.sidebar:hover .sidebar__item-label {
-  opacity: 1;
-}
-
-.sidebar__footer {
-  margin-top: auto;
-  padding: var(--space-sm) 24px;
-}
-
-/* Dashboard structures */
+/* Dashboard wrapper */
 .dashboard-layout {
   flex: 1;
   display: flex;
   flex-direction: column;
   min-height: 0;
   margin-top: 64px; /* Header height */
-  margin-bottom: 48px; /* Footer height */
 }
 
-/* Awake State layout */
+/* ─── Awake State ─── */
 .dashboard-awake {
   display: grid;
-  grid-template-columns: 340px 1fr 360px;
+  grid-template-columns: 320px 1fr 340px;
   gap: var(--space-md);
-  padding: var(--space-md) var(--space-md) var(--space-md) 88px; /* Offset for sidebar */
-  height: calc(100vh - 112px);
+  padding: var(--space-lg);
+  height: calc(100vh - 64px);
   min-height: 0;
 }
 
 .dashboard-awake .grid-area-console {
   grid-column: 1;
+  min-height: 0;
 }
 
 .dashboard-awake__center {
   grid-column: 2;
   position: relative;
-  width: 100%;
-  height: 100%;
   min-height: 0;
 }
 
@@ -139,21 +34,27 @@
   position: absolute;
   inset: 0;
   z-index: 1;
-  pointer-events: auto;
 }
 
 .dashboard-awake .grid-area-replay {
   grid-column: 3;
+  min-height: 0;
 }
 
-/* Dreaming State layout */
+/* ─── Dreaming State ─── */
 .dashboard-dreaming {
   display: grid;
-  grid-template-columns: 340px 1fr 360px;
+  grid-template-columns: 320px 1fr 340px;
   grid-template-rows: 1fr auto;
   gap: var(--space-md);
-  padding: var(--space-md) var(--space-md) var(--space-md) 88px; /* Offset for sidebar consistency */
-  height: calc(100vh - 112px);
+  padding: var(--space-lg);
+  height: calc(100vh - 64px);
+  min-height: 0;
+}
+
+.dashboard-dreaming .grid-area-replay {
+  grid-column: 1;
+  grid-row: 1;
   min-height: 0;
 }
 
@@ -161,80 +62,16 @@
   grid-column: 2;
   grid-row: 1;
   position: relative;
-  width: 100%;
-  height: 100%;
   min-height: 0;
-}
-
-.dashboard-dreaming .grid-area-replay {
-  grid-column: 1;
-  grid-row: 1;
 }
 
 .dashboard-dreaming .grid-area-mri {
   grid-column: 3;
   grid-row: 1;
+  min-height: 0;
 }
 
 .dashboard-dreaming .playback-bar {
-  grid-column: 1 / span 3;
+  grid-column: 1 / -1;
   grid-row: 2;
-}
-
-/* Footer layout */
-.footer {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 48px;
-  background: rgba(6, 10, 20, 0.8);
-  backdrop-filter: blur(20px);
-  border-top: 1px solid var(--border-subtle);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 50;
-  font-size: var(--text-xs);
-  color: var(--text-muted);
-}
-
-.footer__nav {
-  display: flex;
-  gap: var(--space-lg);
-}
-
-.footer__link {
-  color: var(--text-secondary);
-  text-decoration: none;
-  font-family: var(--font-mono);
-  transition: color var(--duration-fast);
-}
-
-.footer__link:hover {
-  color: var(--accent-cyan);
-}
-
-.footer__copyright {
-  position: absolute;
-  right: var(--space-lg);
-  font-family: var(--font-mono);
-  font-size: 10px;
-  opacity: 0.5;
-}
-
-/* Global scrollbars style */
-.custom-scrollbar::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-.custom-scrollbar::-webkit-scrollbar-track {
-  background: transparent;
-}
-.custom-scrollbar::-webkit-scrollbar-thumb {
-  background: var(--border-default);
-  border-radius: var(--radius-pill);
-}
-.custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: var(--border-strong);
 }

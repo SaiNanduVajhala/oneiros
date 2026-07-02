@@ -1,14 +1,19 @@
+/* Header */
 .header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: var(--space-md) var(--space-xl);
-  background: var(--bg-base);
+  padding: 0 var(--space-xl);
+  height: 64px;
+  background: rgba(15, 15, 18, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
   border-bottom: 1px solid var(--border-subtle);
-  position: sticky;
+  position: fixed;
   top: 0;
+  left: 0;
+  right: 0;
   z-index: 100;
-  backdrop-filter: blur(12px);
 }
 
 .header__brand {
@@ -20,19 +25,19 @@
 .header__logo {
   display: flex;
   align-items: center;
-  animation: pulse-glow 3s ease-in-out infinite;
+  animation: breathe 4s ease-in-out infinite;
 }
 
 .header__title {
   font-size: var(--text-lg);
   font-weight: 700;
-  letter-spacing: 0.2em;
+  letter-spacing: 0.18em;
   color: var(--text-primary);
 }
 
 .header__subtitle {
   font-size: var(--text-xs);
-  color: var(--text-tertiary);
+  color: var(--text-muted);
   letter-spacing: 0.04em;
   padding-left: var(--space-sm);
   border-left: 1px solid var(--border-subtle);
@@ -74,12 +79,10 @@
   font-family: var(--font-mono);
   font-size: 9px;
   font-weight: 600;
-  color: var(--accent-cyan);
-  background: rgba(0, 229, 199, 0.1);
-  border: 1px solid rgba(0, 229, 199, 0.2);
-  padding: 2px 6px;
-  border-radius: 4px;
-  margin-left: var(--space-xs);
-  letter-spacing: 0.05em;
+  color: var(--accent-primary);
+  background: var(--accent-primary-dim);
+  border: 1px solid rgba(232, 164, 58, 0.2);
+  padding: 2px 8px;
+  border-radius: var(--radius-sm);
+  letter-spacing: 0.08em;
 }
-

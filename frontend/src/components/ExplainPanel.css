@@ -1,10 +1,11 @@
+/* Explain Panel — Slide-in Detail Inspector */
 .explain-panel-overlay {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.4);
+  background: rgba(0, 0, 0, 0.5);
   backdrop-filter: blur(4px);
   z-index: 500;
   display: flex;
@@ -20,16 +21,12 @@
   display: flex;
   flex-direction: column;
   box-shadow: var(--shadow-lg);
-  animation: slide-in var(--duration-normal) var(--ease-default) both;
+  animation: slide-in var(--duration-normal) var(--ease-out-expo) both;
 }
 
 @keyframes slide-in {
-  from {
-    transform: translateX(100%);
-  }
-  to {
-    transform: translateX(0);
-  }
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
 }
 
 .explain-panel__header {
@@ -75,7 +72,7 @@
 .explain-panel__node-id {
   font-family: var(--font-mono);
   font-size: var(--text-xs);
-  color: var(--accent-cyan);
+  color: var(--accent-primary);
   margin-bottom: var(--space-xs);
 }
 
@@ -134,7 +131,7 @@
   content: '→';
   position: absolute;
   left: 0;
-  color: var(--accent-cyan);
+  color: var(--accent-primary);
 }
 
 /* Trace Diagrams */
@@ -164,18 +161,18 @@
 }
 
 .explain-panel__trace-box--input {
-  background: rgba(59, 130, 246, 0.05);
-  border-color: rgba(59, 130, 246, 0.2);
+  background: rgba(91, 155, 213, 0.05);
+  border-color: rgba(91, 155, 213, 0.2);
 }
 
 .explain-panel__trace-box--algo {
-  background: rgba(0, 229, 199, 0.05);
-  border-color: rgba(0, 229, 199, 0.2);
+  background: rgba(232, 164, 58, 0.05);
+  border-color: rgba(232, 164, 58, 0.2);
 }
 
 .explain-panel__trace-box--output {
-  background: rgba(124, 58, 237, 0.05);
-  border-color: rgba(124, 58, 237, 0.2);
+  background: rgba(107, 175, 122, 0.05);
+  border-color: rgba(107, 175, 122, 0.2);
 }
 
 .explain-panel__trace-label {
@@ -200,7 +197,7 @@
   font-family: var(--font-mono);
   font-size: var(--text-sm);
   font-weight: 600;
-  color: var(--accent-cyan);
+  color: var(--accent-primary);
 }
 
 .explain-panel__trace-params {
@@ -223,7 +220,7 @@
   margin-top: var(--space-md);
   font-family: var(--font-mono);
   font-size: var(--text-xs);
-  color: var(--accent-emerald);
+  color: var(--accent-success);
   text-align: right;
 }
 
