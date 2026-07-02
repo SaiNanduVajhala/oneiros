@@ -18,7 +18,7 @@ function renderNodeExplain(node: MemoryNode) {
         <tbody>
           <tr style={{ borderBottom: '1px solid var(--border-subtle)' }}>
             <td style={{ padding: '8px 0', color: 'var(--text-tertiary)' }}>Source Layer</td>
-            <td style={{ padding: '8px 0', textAlign: 'right', fontWeight: 600, color: node.source === 'sleep' ? 'var(--accent-violet)' : 'var(--accent-cyan)' }}>
+            <td style={{ padding: '8px 0', textAlign: 'right', fontWeight: 600, color: node.source === 'sleep' ? 'var(--accent-primary)' : 'var(--accent-secondary)' }}>
               {node.source === 'sleep' ? 'REM Consolidation' : 'User Interaction'}
             </td>
           </tr>
@@ -32,11 +32,11 @@ function renderNodeExplain(node: MemoryNode) {
           </tr>
           <tr style={{ borderBottom: '1px solid var(--border-subtle)' }}>
             <td style={{ padding: '8px 0', color: 'var(--text-tertiary)' }}>Pruning Threshold</td>
-            <td style={{ padding: '8px 0', textAlign: 'right', fontWeight: 600, color: 'var(--accent-amber)' }}>&lt; 0.25 Activation</td>
+            <td style={{ padding: '8px 0', textAlign: 'right', fontWeight: 600, color: 'var(--accent-warning)' }}>&lt; 0.25 Activation</td>
           </tr>
           <tr style={{ borderBottom: '1px solid var(--border-subtle)' }}>
             <td style={{ padding: '8px 0', color: 'var(--text-tertiary)' }}>Action Taken</td>
-            <td style={{ padding: '8px 0', textAlign: 'right', fontWeight: 600, color: node.importance < 0.25 ? 'var(--accent-rose)' : 'var(--accent-emerald)' }}>
+            <td style={{ padding: '8px 0', textAlign: 'right', fontWeight: 600, color: node.importance < 0.25 ? 'var(--accent-error)' : 'var(--accent-success)' }}>
               {node.importance < 0.25 ? 'Evicted / Pruned' : 'Retained in Graph'}
             </td>
           </tr>
