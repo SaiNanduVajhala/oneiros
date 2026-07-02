@@ -35,6 +35,9 @@ interface NodeState {
   targetOpacity: number;
   data: MemoryNode;
   isConcept: boolean;
+  position: THREE.Vector3;
+  velocity: THREE.Vector3;
+  force: THREE.Vector3;
 }
 
 export function GraphViewport({ nodes, edges, events, onNodeClick }: GraphViewportProps) {
@@ -229,6 +232,9 @@ export function GraphViewport({ nodes, edges, events, onNodeClick }: GraphViewpo
             targetOpacity,
             data: node,
             isConcept,
+            position: new THREE.Vector3(hx, hy, hz),
+            velocity: new THREE.Vector3(0, 0, 0),
+            force: new THREE.Vector3(0, 0, 0),
           });
         }
       }
@@ -347,11 +353,74 @@ export function GraphViewport({ nodes, edges, events, onNodeClick }: GraphViewpo
       // Smoothly zoom camera
       camera.position.z += (zoomRef.current - camera.position.z) * 0.1;
 
-      // Update positions, scales, opacities of nodes
-      threeNodesMap.forEach((state, id) => {
-        // Lerp position
-        state.mesh.position.lerp(state.targetPos, 0.06);
+      // --- Dynamic 3D Force-Directed Layout Physics Engine ---
+      const dt = 0.08;
+      const k_repel = 0.15;
+      const k_attract = 0.25;
+      const rest_length = 1.0;
+      const k_gravity = 0.04;
+      const damping = 0.85;
 
+      // 1. Reset forces
+      threeNodesMap.forEach((u) => {
+        u.force.set(0, 0, 0);
+      });
+
+      // 2. Repulsion (charge) forces between all node pairs
+      const nodesList = Array.from(threeNodesMap.values()).filter(u => u.targetOpacity > 0.0);
+      for (let i = 0; i < nodesList.length; i++) {
+        const u = nodesList[i];
+        for (let j = i + 1; j < nodesList.length; j++) {
+          const v = nodesList[j];
+          const dir = new THREE.Vector3().subVectors(u.position, v.position);
+          let dist = dir.length();
+          if (dist < 0.1) {
+            dir.set(Math.random() - 0.5, Math.random() - 0.5, Math.random() - 0.5).normalize();
+            dist = 0.1;
+          }
+          const f_mag = k_repel / (dist * dist);
+          const forceVec = dir.normalize().multiplyScalar(f_mag);
+          u.force.add(forceVec);
+          v.force.sub(forceVec);
+        }
+      }
+
+      // 3. Attraction (spring) forces along active edges
+      threeEdgesList.forEach(edge => {
+        const u = threeNodesMap.get(edge.source);
+        const v = threeNodesMap.get(edge.target);
+        if (!u || !v || u.targetOpacity === 0.0 || v.targetOpacity === 0.0) return;
+
+        const dir = new THREE.Vector3().subVectors(v.position, u.position);
+        let dist = dir.length();
+        if (dist < 0.1) dist = 0.1;
+        const f_mag = k_attract * (dist - rest_length);
+        const forceVec = dir.normalize().multiplyScalar(f_mag);
+        u.force.add(forceVec);
+        v.force.sub(forceVec);
+      });
+
+      // 4. Center attraction / gravity and velocity integration
+      threeNodesMap.forEach((u) => {
+        // Gravity
+        const gravityForce = u.position.clone().multiplyScalar(-k_gravity);
+        u.force.add(gravityForce);
+
+        // Pull to target hash coordinates to anchor visual zones
+        const pullForce = new THREE.Vector3().subVectors(u.targetPos, u.position).multiplyScalar(0.08);
+        u.force.add(pullForce);
+
+        // Integrate
+        u.velocity.add(u.force.multiplyScalar(dt));
+        u.velocity.multiplyScalar(damping);
+        u.position.add(u.velocity.clone().multiplyScalar(dt));
+
+        // Lerp mesh position to physics position
+        u.mesh.position.lerp(u.position, 0.15);
+      });
+
+      // Update scale and material parameters for nodes
+      threeNodesMap.forEach((state, id) => {
         // Lerp scale
         const currentScale = state.mesh.scale.x;
         const nextScale = currentScale + (state.targetScale - currentScale) * 0.08;
