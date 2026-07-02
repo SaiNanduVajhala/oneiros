@@ -14,7 +14,6 @@ export interface DreamState {
   chatMessages: ChatMessage[];
   selectedItem: { type: string; data: unknown } | null;
   startDream: () => Promise<void>;
-  loadDemoData: () => Promise<void>;
   wakeUp: () => void;
   sendMessage: (msg: string) => Promise<void>;
   setSelectedItem: (item: { type: string; data: unknown } | null) => void;
@@ -120,22 +119,7 @@ export function useDreamState(): DreamState {
     }
   }, [connectSSE, fetchResults]);
 
-  const loadDemoData = useCallback(async () => {
-    try {
-      const res = await fetch(`${API}/demo/load`, { method: 'POST' });
-      const data = await res.json();
-      if (data.status === 'loaded') {
-        await fetchResults();
-      }
-    } catch (err) {
-      console.error('Failed to load demo data:', err);
-    }
-  }, [fetchResults]);
 
-  // Load initial demo data on mount
-  useEffect(() => {
-    loadDemoData();
-  }, [loadDemoData]);
 
   const sendMessage = useCallback(async (msg: string) => {
     const userMsg: ChatMessage = {
@@ -182,7 +166,6 @@ export function useDreamState(): DreamState {
     chatMessages,
     selectedItem,
     startDream,
-    loadDemoData,
     wakeUp,
     sendMessage,
     setSelectedItem,
