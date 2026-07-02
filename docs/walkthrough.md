@@ -171,7 +171,25 @@ We performed a comprehensive evidence-driven project-wide reference audit, remov
 
 ---
 
-## 11. WeMakeDevs Cognee Hackathon Disclosures
+## 11. Phase 11 — Cognee Cloud Exclusive Migration (Single Source of Truth)
+
+We removed the local SQLite and LanceDB provider fallbacks completely, solidifying Cognee Cloud as the single, permanent database substrate for Oneiros.
+
+### 11.1 Deletion of Local Provider
+*   Deleted the redundant [cognee_local_provider.py](file:///c:/Users/nagendra%20prasad/Downloads/oneiros/backend/memory/cognee_local_provider.py) module.
+
+### 11.2 Unconditional Cloud Binding
+*   Refactored [settings.py](file:///c:/Users/nagendra%20prasad/Downloads/oneiros/backend/infrastructure/configuration/settings.py) to always instantiate and bind `CogneeCloudProvider` unconditionally on boot.
+*   Enforced fast-fail startup check: if `COGNEE_API_KEY` is not set or set to a placeholder, the server will raise a `ValueError` on startup and prevent initialization.
+*   Removed `ONEIROS_PROVIDER` flags from [.env](file:///c:/Users/nagendra%20prasad/Downloads/oneiros/.env) and [.env.example](file:///c:/Users/nagendra%20prasad/Downloads/oneiros/.env.example).
+
+### 11.3 Integration Mock Testing
+*   Refactored [test_api.py](file:///c:/Users/nagendra%20prasad/Downloads/oneiros/backend/tests/test_api.py) to use FastAPI's dependency overrides (`app.dependency_overrides`) mapping the provider to a mock class, ensuring health checks execute 100% offline.
+*   Refactored [test_sleep.py](file:///c:/Users/nagendra%20prasad/Downloads/oneiros/backend/tests/test_sleep.py) and [test_memory.py](file:///c:/Users/nagendra%20prasad/Downloads/oneiros/backend/tests/test_memory.py) to remove local provider tests and mock the cloud client calls. All **8/8 offline tests pass successfully**.
+
+---
+
+## 12. WeMakeDevs Cognee Hackathon Disclosures
 *   **AI Assistant Declaration**: Built using Google DeepMind's **Antigravity AI coding assistant** to co-author, debug, audit, and clean the repository structures.
 
 
