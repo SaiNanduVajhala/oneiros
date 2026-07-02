@@ -127,7 +127,10 @@ class CogneeCloudProvider(MemoryProvider):
         for n in cognee_nodes:
             props = n.properties.copy() if n.properties else {}
             props.setdefault("content", props.get("name", props.get("text", props.get("description", n.id))))
-            props.setdefault("access_count", getattr(n, "count", 1) or 1)
+            count_val = getattr(n, "count", 1)
+            if callable(count_val) or not isinstance(count_val, (int, float)):
+                count_val = 1
+            props.setdefault("access_count", count_val)
             props.setdefault("importance", 0.5)
             props.setdefault("source", "user" if props.get("type") != "Concept" else "sleep")
             props.setdefault("semantic_tags", [props.get("type", "general").lower()])

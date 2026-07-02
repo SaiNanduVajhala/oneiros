@@ -9,7 +9,7 @@ import sys
 from dotenv import load_dotenv
 
 # Resolve root workspace directory and load .env file
-root_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+root_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 load_dotenv(os.path.join(root_dir, ".env"))
 
 class Settings:

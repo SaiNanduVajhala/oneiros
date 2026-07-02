@@ -53,7 +53,7 @@ class CogneeClient:
 
     async def recall(self, query: str, dataset_name: str) -> List[Any]:
         await self.connect()
-        return await cognee.recall(query, dataset_name=dataset_name)
+        return await cognee.recall(query, datasets=[dataset_name])
 
     async def improve(self, dataset_name: str) -> None:
         await self.connect()
