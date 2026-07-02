@@ -23,6 +23,7 @@ function App() {
     wakeUp,
     sendMessage,
     setSelectedItem,
+    isSending,
   } = useDreamState();
 
   const [playbackIndex, setPlaybackIndex] = useState<number>(-1);
@@ -62,7 +63,7 @@ function App() {
         {isAwake ? (
           <div className="dashboard-awake stagger">
             <div className="grid-area-console">
-              <AgentConsole messages={chatMessages} onSend={sendMessage} />
+              <AgentConsole messages={chatMessages} onSend={sendMessage} isLoading={isSending} />
             </div>
 
             <div className="dashboard-awake__center">

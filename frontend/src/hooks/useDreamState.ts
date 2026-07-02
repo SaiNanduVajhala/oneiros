@@ -17,6 +17,7 @@ export interface DreamState {
   wakeUp: () => void;
   sendMessage: (msg: string) => Promise<void>;
   setSelectedItem: (item: { type: string; data: unknown } | null) => void;
+  isSending: boolean;
 }
 
 export function useDreamState(): DreamState {
@@ -29,6 +30,7 @@ export function useDreamState(): DreamState {
   const [snapshots, setSnapshots] = useState<StageSnapshot[]>([]);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [selectedItem, setSelectedItem] = useState<{ type: string; data: unknown } | null>(null);
+  const [isSending, setIsSending] = useState<boolean>(false);
   const eventSourceRef = useRef<EventSource | null>(null);
 
   // Connect SSE
@@ -88,6 +90,11 @@ export function useDreamState(): DreamState {
     }
   }, []);
 
+  // Fetch initial graph and state on mount
+  useEffect(() => {
+    fetchResults();
+  }, [fetchResults]);
+
   const startDream = useCallback(async () => {
     setStatus('dreaming');
     setEvents([]);
@@ -128,6 +135,7 @@ export function useDreamState(): DreamState {
       timestamp: new Date().toISOString(),
     };
     setChatMessages(prev => [...prev, userMsg]);
+    setIsSending(true);
 
     try {
       const res = await fetch('http://localhost:8000/api/chat', {
@@ -142,14 +150,17 @@ export function useDreamState(): DreamState {
         timestamp: new Date().toISOString(),
       };
       setChatMessages(prev => [...prev, assistantMsg]);
+      await fetchResults();
     } catch {
       setChatMessages(prev => [...prev, {
         role: 'assistant',
         content: 'Connection error — is the backend running?',
         timestamp: new Date().toISOString(),
       }]);
+    } finally {
+      setIsSending(false);
     }
-  }, []);
+  }, [fetchResults]);
 
   const wakeUp = useCallback(() => {
     setStatus('idle');
@@ -169,5 +180,6 @@ export function useDreamState(): DreamState {
     wakeUp,
     sendMessage,
     setSelectedItem,
+    isSending,
   };
 }

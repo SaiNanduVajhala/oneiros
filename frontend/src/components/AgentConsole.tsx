@@ -5,15 +5,16 @@ import './AgentConsole.css';
 interface AgentConsoleProps {
   messages: ChatMessage[];
   onSend: (msg: string) => void;
+  isLoading?: boolean;
 }
 
-export function AgentConsole({ messages, onSend }: AgentConsoleProps) {
+export function AgentConsole({ messages, onSend, isLoading = false }: AgentConsoleProps) {
   const [input, setInput] = useState('');
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
-  }, [messages]);
+  }, [messages, isLoading]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -45,16 +46,32 @@ export function AgentConsole({ messages, onSend }: AgentConsoleProps) {
             <p>{msg.content}</p>
           </div>
         ))}
+        {isLoading && (
+          <div className="agent-console__msg agent-console__msg--assistant agent-console__msg--loading">
+            <span className="agent-console__role">Oneiros</span>
+            <div className="typing-indicator">
+              <span></span>
+              <span></span>
+              <span></span>
+            </div>
+          </div>
+        )}
       </div>
       <form className="chat-input-wrap" onSubmit={handleSubmit}>
         <input
           className="chat-input"
           type="text"
-          placeholder="Ask Oneiros..."
+          placeholder={isLoading ? "Oneiros is thinking..." : "Ask Oneiros..."}
           value={input}
           onChange={e => setInput(e.target.value)}
+          disabled={isLoading}
         />
-        <button className="btn-primary" type="submit" style={{ padding: '10px 16px' }}>
+        <button 
+          className="btn-primary" 
+          type="submit" 
+          style={{ padding: '10px 16px' }}
+          disabled={isLoading || !input.trim()}
+        >
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
             <path d="M2 8h12M10 4l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
           </svg>

@@ -44,8 +44,25 @@ class CogneeCloudProvider(MemoryProvider):
                     y REAL
                 )
             """)
-            cursor.execute("DROP TABLE IF EXISTS nodes")
-            cursor.execute("DROP TABLE IF EXISTS edges")
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS nodes (
+                    id TEXT PRIMARY KEY,
+                    content TEXT,
+                    access_count INTEGER,
+                    importance REAL,
+                    source TEXT,
+                    semantic_tags TEXT
+                )
+            """)
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS edges (
+                    source TEXT,
+                    target TEXT,
+                    relation TEXT,
+                    weight REAL,
+                    PRIMARY KEY (source, target, relation)
+                )
+            """)
             conn.commit()
 
     async def remember(self, content: str, access_count: int = 1, importance: float = 0.5) -> str:
@@ -62,8 +79,21 @@ class CogneeCloudProvider(MemoryProvider):
             await self.client.remember(content, dataset_name="oneiros_cloud")
             logger.info("Successfully registered memory in Cognee Cloud.")
         except Exception as e:
-            logger.error(f"Cognee Cloud remember failed: {e}")
-            raise
+            logger.error(f"Cognee Cloud remember failed, using local mirror: {e}")
+
+        # Always save/mirror locally in SQLite db
+        try:
+            import json
+            with sqlite3.connect(self.db_path) as conn:
+                cursor = conn.cursor()
+                cursor.execute(
+                    "INSERT OR REPLACE INTO nodes (id, content, access_count, importance, source, semantic_tags) VALUES (?, ?, ?, ?, ?, ?)",
+                    (node_id, content, access_count, importance, "user", json.dumps(["general"]))
+                )
+                conn.commit()
+        except Exception as db_err:
+            logger.error(f"Failed to mirror node locally: {db_err}")
+
         return node_id
 
     async def recall(self, query: str) -> List[Dict[str, Any]]:
@@ -76,8 +106,17 @@ class CogneeCloudProvider(MemoryProvider):
                 return [{"text": str(r)} for r in results]
             return []
         except Exception as e:
-            logger.error(f"Cognee Cloud recall failed: {e}")
-            raise
+            logger.error(f"Cognee Cloud recall failed, searching local fallback: {e}")
+            try:
+                with sqlite3.connect(self.db_path) as conn:
+                    cursor = conn.cursor()
+                    cursor.execute("SELECT content FROM nodes WHERE content LIKE ?", (f"%{query}%",))
+                    rows = cursor.fetchall()
+                    if rows:
+                        return [{"text": row[0]} for row in rows]
+            except Exception as db_err:
+                logger.error(f"Local query fallback failed: {db_err}")
+            return []
 
     async def improve(self, label: str, description: str, confidence: float) -> str:
         """
@@ -87,9 +126,21 @@ class CogneeCloudProvider(MemoryProvider):
             await self.client.improve(dataset_name="oneiros_cloud")
             logger.info("Successfully invoked Cognee Cloud improve ontology.")
         except Exception as e:
-            logger.error(f"Cognee Cloud improve failed: {e}")
-            raise
-        return f"concept-{uuid.uuid4().hex[:8]}"
+            logger.error(f"Cognee Cloud improve failed, mirroring locally: {e}")
+            
+        concept_id = f"concept-{uuid.uuid4().hex[:8]}"
+        try:
+            import json
+            with sqlite3.connect(self.db_path) as conn:
+                cursor = conn.cursor()
+                cursor.execute(
+                    "INSERT OR REPLACE INTO nodes (id, content, access_count, importance, source, semantic_tags) VALUES (?, ?, ?, ?, ?, ?)",
+                    (concept_id, f"{label}: {description}", 1, confidence, "sleep", json.dumps(["concept"]))
+                )
+                conn.commit()
+        except Exception as db_err:
+            logger.error(f"Failed to store concept locally: {db_err}")
+        return concept_id
 
     async def forget(self, node_id: str) -> bool:
         """
@@ -101,47 +152,97 @@ class CogneeCloudProvider(MemoryProvider):
                 await self.client.forget(data_id=data_uuid, dataset_name="oneiros_cloud")
             except ValueError:
                 await self.client.forget(data_id=node_id, dataset_name="oneiros_cloud")
+        except Exception as e:
+            logger.error(f"Cognee Cloud forget failed: {e}")
             
+        try:
             with sqlite3.connect(self.db_path) as conn:
                 cursor = conn.cursor()
                 cursor.execute("DELETE FROM node_positions WHERE id = ?", (node_id,))
+                cursor.execute("DELETE FROM nodes WHERE id = ?", (node_id,))
+                cursor.execute("DELETE FROM edges WHERE source = ? OR target = ?", (node_id, node_id))
                 conn.commit()
             return True
-        except Exception as e:
-            logger.error(f"Cognee Cloud forget failed: {e}")
+        except Exception as db_err:
+            logger.error(f"Local forget failed: {db_err}")
             raise
 
     async def get_graph_data(self) -> Tuple[List[Tuple[str, Dict[str, Any]]], List[Tuple[str, str, str, Dict[str, Any]]]]:
         """
-        Pulls nodes and edges from Cognee Cloud and maps properties.
+        Pulls nodes and edges from Cognee Cloud and maps properties. Falls back to local SQLite on errors.
         """
         nodes_res = []
         edges_res = []
         try:
             cognee_nodes, cognee_edges = await self.client.get_provenance_graph()
+            
+            # Map nodes
+            for n in cognee_nodes:
+                props = n.properties.copy() if n.properties else {}
+                props.setdefault("content", props.get("name", props.get("text", props.get("description", n.id))))
+                count_val = getattr(n, "count", 1)
+                if callable(count_val) or not isinstance(count_val, (int, float)):
+                    count_val = 1
+                props.setdefault("access_count", count_val)
+                props.setdefault("importance", 0.5)
+                props.setdefault("source", "user" if props.get("type") != "Concept" else "sleep")
+                props.setdefault("semantic_tags", [props.get("type", "general").lower()])
+                props.setdefault("last_accessed", datetime.now().isoformat())
+                nodes_res.append((n.id, props))
+
+            # Map edges
+            for e in cognee_edges:
+                props = e.properties.copy() if e.properties else {}
+                props.setdefault("weight", 1.0)
+                edges_res.append((e.source, e.target, e.relation or "related_to", props))
+
+            # Mirror to local SQLite for future offline queries
+            try:
+                import json
+                with sqlite3.connect(self.db_path) as conn:
+                    cursor = conn.cursor()
+                    cursor.execute("DELETE FROM nodes")
+                    cursor.execute("DELETE FROM edges")
+                    for nid, props in nodes_res:
+                        tags_str = json.dumps(props.get("semantic_tags", []))
+                        cursor.execute(
+                            "INSERT OR REPLACE INTO nodes (id, content, access_count, importance, source, semantic_tags) VALUES (?, ?, ?, ?, ?, ?)",
+                            (nid, props.get("content"), props.get("access_count"), props.get("importance"), props.get("source"), tags_str)
+                        )
+                    for src, tgt, rel, props in edges_res:
+                        cursor.execute(
+                            "INSERT OR REPLACE INTO edges (source, target, relation, weight) VALUES (?, ?, ?, ?)",
+                            (src, tgt, rel, props.get("weight", 1.0))
+                        )
+                    conn.commit()
+            except Exception as db_err:
+                logger.error(f"Failed to update local sqlite mirror: {db_err}")
+
         except Exception as e:
-            logger.error(f"Cognee Cloud provenance retrieval failed: {e}")
-            raise
-
-        # Map nodes
-        for n in cognee_nodes:
-            props = n.properties.copy() if n.properties else {}
-            props.setdefault("content", props.get("name", props.get("text", props.get("description", n.id))))
-            count_val = getattr(n, "count", 1)
-            if callable(count_val) or not isinstance(count_val, (int, float)):
-                count_val = 1
-            props.setdefault("access_count", count_val)
-            props.setdefault("importance", 0.5)
-            props.setdefault("source", "user" if props.get("type") != "Concept" else "sleep")
-            props.setdefault("semantic_tags", [props.get("type", "general").lower()])
-            props.setdefault("last_accessed", datetime.now().isoformat())
-            nodes_res.append((n.id, props))
-
-        # Map edges
-        for e in cognee_edges:
-            props = e.properties.copy() if e.properties else {}
-            props.setdefault("weight", 1.0)
-            edges_res.append((e.source, e.target, e.relation or "related_to", props))
+            logger.error(f"Cognee Cloud provenance retrieval failed, loading from local fallback: {e}")
+            try:
+                import json
+                with sqlite3.connect(self.db_path) as conn:
+                    cursor = conn.cursor()
+                    cursor.execute("SELECT id, content, access_count, importance, source, semantic_tags FROM nodes")
+                    for row in cursor.fetchall():
+                        try:
+                            tags = json.loads(row[5])
+                        except Exception:
+                            tags = [row[5]] if row[5] else []
+                        nodes_res.append((row[0], {
+                            "content": row[1],
+                            "access_count": row[2],
+                            "importance": row[3],
+                            "source": row[4],
+                            "semantic_tags": tags,
+                            "last_accessed": datetime.now().isoformat()
+                        }))
+                    cursor.execute("SELECT source, target, relation, weight FROM edges")
+                    for row in cursor.fetchall():
+                        edges_res.append((row[0], row[1], row[2], {"weight": row[3]}))
+            except Exception as db_err:
+                logger.error(f"Local fallback database read failed: {db_err}")
 
         # Load or generate visual positions in SQLite
         with sqlite3.connect(self.db_path) as conn:
@@ -171,12 +272,18 @@ class CogneeCloudProvider(MemoryProvider):
         """
         try:
             await self.client.clear_all(dataset_name="oneiros_cloud")
+        except Exception as e:
+            logger.error(f"Cognee Cloud clear failed: {e}")
+
+        try:
             with sqlite3.connect(self.db_path) as conn:
                 cursor = conn.cursor()
                 cursor.execute("DELETE FROM node_positions")
+                cursor.execute("DELETE FROM nodes")
+                cursor.execute("DELETE FROM edges")
                 conn.commit()
-        except Exception as e:
-            logger.error(f"Cognee Cloud clear failed: {e}")
+        except Exception as db_err:
+            logger.error(f"Local db clear failed: {db_err}")
             raise
 
     def save_graph_snapshot(self, snapshot: Any):
@@ -196,6 +303,28 @@ class CogneeCloudProvider(MemoryProvider):
 
     async def _async_save_graph_snapshot(self, snapshot: Any):
         try:
+            # Overwrite local sqlite mirror
+            import json
+            with sqlite3.connect(self.db_path) as conn:
+                cursor = conn.cursor()
+                cursor.execute("DELETE FROM nodes")
+                cursor.execute("DELETE FROM edges")
+                for node in snapshot.nodes:
+                    tags = json.dumps(node.semantic_tags)
+                    cursor.execute(
+                        "INSERT OR REPLACE INTO nodes (id, content, access_count, importance, source, semantic_tags) VALUES (?, ?, ?, ?, ?, ?)",
+                        (node.id, node.content, node.access_count, node.importance, node.source, tags)
+                    )
+                for edge in snapshot.edges:
+                    cursor.execute(
+                        "INSERT OR REPLACE INTO edges (source, target, relation, weight) VALUES (?, ?, ?, ?)",
+                        (edge.source, edge.target, edge.type, edge.weight)
+                    )
+                conn.commit()
+        except Exception as db_err:
+            logger.error(f"Failed to update local sqlite mirror during snapshot save: {db_err}")
+
+        try:
             nodes_raw, _ = await self.get_graph_data()
             current_node_ids = {nid for nid, _ in nodes_raw}
             snapshot_node_ids = {node.id for node in snapshot.nodes}
@@ -205,7 +334,10 @@ class CogneeCloudProvider(MemoryProvider):
                 if nid not in snapshot_node_ids:
                     logger.info(f"Sync: Pruning node {nid} from Cognee Cloud.")
                     await self.forget(nid)
+        except Exception as e:
+            logger.warning(f"Remote cloud pruning sync failed, falling back: {e}")
 
+        try:
             # Update cache positions for surviving snapshot nodes
             with sqlite3.connect(self.db_path) as conn:
                 cursor = conn.cursor()
@@ -221,4 +353,4 @@ class CogneeCloudProvider(MemoryProvider):
                     )
                 conn.commit()
         except Exception as e:
-            logger.error(f"Failed to synchronize graph snapshot: {e}")
+            logger.error(f"Failed to synchronize visual coordinates snapshot: {e}")
