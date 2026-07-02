@@ -85,10 +85,7 @@ graph TD
     REM -->|improve| Provider
 
     Provider --> CloudProvider["Cognee Cloud Provider"]
-    Provider --> LocalProvider["Local Cognee Provider"]
-
     CloudProvider --> CogneeClient["Cognee Cloud Client"]
-    LocalProvider --> CogneeLocal["Local Cognee"]
 
     SleepCoordinator -->|SSE Events| Frontend["React Frontend"]
 ```
@@ -160,12 +157,9 @@ Oneiros implements formal mathematical models to drive memory operations:
 ### 1. Configuration
 Create a `.env` file in the workspace root directory:
 ```env
-# Provider: local | cloud
-ONEIROS_PROVIDER=local
-
 # API Credentials
 GEMINI_API_KEY=your_gemini_api_key
-COGNEE_API_KEY=your_cognee_api_key  # (Required only for cloud provider)
+COGNEE_API_KEY=your_cognee_api_key
 ```
 
 ### 2. Startup Commands

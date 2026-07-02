@@ -8,11 +8,24 @@ import pytest
 from datetime import datetime, timedelta
 from typing import List
 from domain.memory import MemoryGraphSnapshot, MemoryNode, MemoryEdge
-from memory.cognee_local_provider import LocalCogneeProvider
+from unittest.mock import AsyncMock, MagicMock
+from infrastructure.cognee_client import CogneeClient
+from memory.cognee_cloud_provider import CogneeCloudProvider
 from kernel.sleep.coordinator import SleepCoordinator
 from kernel.algorithms.graph_metrics import compute_memory_health
 from kernel.algorithms.similarity import detect_duplicate_candidates
 from kernel.algorithms.contradiction import find_potential_contradiction_pairs
+
+def get_mock_provider():
+    mock_client = MagicMock(spec=CogneeClient)
+    mock_client.remember = AsyncMock()
+    mock_client.improve = AsyncMock()
+    mock_client.forget = AsyncMock()
+    mock_client.clear_all = AsyncMock()
+    mock_client.get_provenance_graph = AsyncMock(return_value=([], []))
+    
+    provider = CogneeCloudProvider(mock_client)
+    return provider
 
 # --- Evaluation Dataset Builders ---
 
@@ -160,7 +173,7 @@ async def test_dataset_a_consolidation():
     """
     Tests Dataset A execution: Verify replay, clustering fallback, and metrics compilation.
     """
-    provider = LocalCogneeProvider()
+    provider = get_mock_provider()
     coordinator = SleepCoordinator(provider)
     snapshot = build_dataset_a()
     
@@ -176,7 +189,7 @@ async def test_dataset_b_performance():
     """
     Tests Dataset B execution: Large batch scale run checks.
     """
-    provider = LocalCogneeProvider()
+    provider = get_mock_provider()
     coordinator = SleepCoordinator(provider)
     snapshot = build_dataset_b()
     
@@ -199,7 +212,7 @@ async def test_dataset_c_pruning_and_contradictions():
     assert len(dups) >= 1
     assert len(contras) >= 1
     
-    provider = LocalCogneeProvider()
+    provider = get_mock_provider()
     coordinator = SleepCoordinator(provider)
     
     report = await coordinator.execute_cycle(snapshot)

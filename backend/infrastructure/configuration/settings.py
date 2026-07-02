@@ -41,26 +41,21 @@ def register_memory_provider():
         if backend_dir not in sys.path:
             sys.path.append(backend_dir)
             
-        provider_type = os.environ.get("ONEIROS_PROVIDER", "local")
-        if provider_type == "cloud":
-            api_key = settings.cognee_api_key
-            if not api_key or api_key == "mock-key":
-                raise ValueError(
-                    "CRITICAL CONFIGURATION ERROR: 'COGNEE_API_KEY' is missing or set to placeholder!\n"
-                    "Please configure COGNEE_API_KEY in your .env environment file to use Cognee Cloud."
-                )
-            
-            # Base URL is optional. Overrides Cognee default cloud URL only if set.
-            base_url = os.environ.get("COGNEE_BASE_URL")
-            
-            from infrastructure.cognee_client import CogneeClient
-            from memory.cognee_cloud_provider import CogneeCloudProvider
-            
-            client = CogneeClient(api_key=api_key, base_url=base_url)
-            _PROVIDER_INSTANCE = CogneeCloudProvider(client)
-        else:
-            from memory.cognee_local_provider import LocalCogneeProvider
-            _PROVIDER_INSTANCE = LocalCogneeProvider()
+        api_key = settings.cognee_api_key
+        if not api_key or api_key == "mock-key" or api_key == "":
+            raise ValueError(
+                "CRITICAL CONFIGURATION ERROR: 'COGNEE_API_KEY' is missing or set to placeholder!\n"
+                "Please configure COGNEE_API_KEY in your .env environment file to use Cognee Cloud."
+            )
+        
+        # Base URL is optional. Overrides Cognee default cloud URL only if set.
+        base_url = os.environ.get("COGNEE_BASE_URL")
+        
+        from infrastructure.cognee_client import CogneeClient
+        from memory.cognee_cloud_provider import CogneeCloudProvider
+        
+        client = CogneeClient(api_key=api_key, base_url=base_url)
+        _PROVIDER_INSTANCE = CogneeCloudProvider(client)
         
     return _PROVIDER_INSTANCE
 

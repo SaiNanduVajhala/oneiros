@@ -9,7 +9,6 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 from infrastructure.cognee_client import CogneeClient
 from memory.cognee_cloud_provider import CogneeCloudProvider
-from memory.cognee_local_provider import LocalCogneeProvider
 from infrastructure.configuration.settings import settings
 
 # Helper class representing mock Cognee nodes/edges returned by get_memory_provenance_graph
@@ -32,7 +31,7 @@ async def test_cognee_cloud_provider_validation_failure():
     """
     Verifies settings.py raises ValueError on startup if cloud mode is selected without keys.
     """
-    with patch.dict(os.environ, {"ONEIROS_PROVIDER": "cloud", "COGNEE_API_KEY": ""}):
+    with patch("infrastructure.configuration.settings.settings.cognee_api_key", ""):
         # Force settings reload or call registration directly to check fast-fail
         from infrastructure.configuration.settings import register_memory_provider
         # Since _PROVIDER_INSTANCE might be cached, we patch it to None inside settings
@@ -124,43 +123,6 @@ async def test_cognee_cloud_provider_queueing():
     mock_client.remember.assert_awaited_once_with("Memory queued during dream sleep", dataset_name="oneiros_cloud")
 
 
-@pytest.mark.asyncio
-async def test_local_cognee_provider():
-    """
-    Verifies LocalCogneeProvider functions correctly with local storage fallback layers.
-    """
-    provider = LocalCogneeProvider()
-    await provider.clear_all()
-    
-    # 1. Test remember
-    node_id = await provider.remember("I write high performance CUDA kernels", access_count=3, importance=0.8)
-    assert node_id.startswith("mem-")
-    
-    # 2. Test get_graph_data
-    nodes, edges = await provider.get_graph_data()
-    node_dict = {n[0]: n[1] for n in nodes}
-    assert node_id in node_dict
-    assert node_dict[node_id]["content"] == "I write high performance CUDA kernels"
-    assert node_dict[node_id]["access_count"] == 3
-    assert node_dict[node_id]["importance"] == 0.8
-    assert "cuda" in node_dict[node_id]["semantic_tags"]
-    
-    # 3. Test improve
-    concept_id = await provider.improve("GPU Optimizations", "Studies on CUDA loops and performance tiling", 0.95)
-    assert concept_id.startswith("concept-")
-    
-    nodes, edges = await provider.get_graph_data()
-    node_dict = {n[0]: n[1] for n in nodes}
-    assert concept_id in node_dict
-    
-    # 4. Test forget
-    deleted = await provider.forget(node_id)
-    assert deleted is True
-    
-    nodes, edges = await provider.get_graph_data()
-    node_dict = {n[0]: n[1] for n in nodes}
-    assert node_id not in node_dict
-    assert concept_id in node_dict
 
 
 # =====================================================================
