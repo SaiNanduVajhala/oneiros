@@ -107,6 +107,40 @@ class CogneeCloudProvider(MemoryProvider):
 
         return node_id
 
+    async def update_node_properties(
+        self,
+        node_id: str,
+        metadata: Optional[Dict[str, Any]] = None,
+        importance: Optional[float] = None,
+        access_count: Optional[int] = None
+    ):
+        """
+        Updates node properties and metadata locally in the SQLite mirror.
+        """
+        import json
+        try:
+            with sqlite3.connect(self.db_path) as conn:
+                cursor = conn.cursor()
+                if importance is not None:
+                    cursor.execute("UPDATE nodes SET importance = ? WHERE id = ?", (importance, node_id))
+                if access_count is not None:
+                    cursor.execute("UPDATE nodes SET access_count = ? WHERE id = ?", (access_count, node_id))
+                if metadata is not None:
+                    cursor.execute("SELECT metadata FROM nodes WHERE id = ?", (node_id,))
+                    row = cursor.fetchone()
+                    existing_meta = {}
+                    if row and row[0]:
+                        try:
+                            existing_meta = json.loads(row[0])
+                        except Exception:
+                            pass
+                    existing_meta.update(metadata)
+                    cursor.execute("UPDATE nodes SET metadata = ? WHERE id = ?", (json.dumps(existing_meta), node_id))
+                conn.commit()
+        except Exception as e:
+            logger.error(f"Failed to update node properties in SQLite mirror: {e}")
+
+
     async def recall(self, query: str) -> List[Dict[str, Any]]:
         """
         Queries Cognee Cloud for semantic/episodic retrieval, filtering out superseded or archived memories.

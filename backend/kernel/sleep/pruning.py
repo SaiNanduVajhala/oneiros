@@ -25,6 +25,15 @@ class PruningStage:
     def __init__(self, provider: MemoryProvider, reasoning_engine: ReasoningEngine):
         self.provider = provider
         self.reasoning_engine = reasoning_engine
+        
+        from infrastructure.configuration.settings import settings
+        from kernel.sleep.lifecycle_engine import MemoryLifecycleEngine
+        self.lifecycle_engine = MemoryLifecycleEngine(
+            active_to_inactive_threshold=settings.active_to_inactive_threshold,
+            inactive_to_archived_threshold=settings.inactive_to_archived_threshold,
+            superseded_to_archived_threshold=settings.superseded_to_archived_threshold,
+            forget_retention_threshold=settings.forget_retention_threshold
+        )
 
     async def execute(
         self,
@@ -37,40 +46,60 @@ class PruningStage:
         Returns:
             Tuple[MemoryGraphSnapshot, List[str]]: Updated snapshot and timeline log events.
         """
-        logger.info("Executing Pruning (N3) Stage...")
+        logger.info("Executing Pruning (N3) Stage with Life Cycle Engine...")
         timeline_events = []
         
         nodes_to_delete: Set[str] = set()
         nodes_dict: Dict[str, MemoryNode] = {n.id: n for n in snapshot.nodes}
 
-        # --- 1. Compute Activation Decay & Low-Activation Flags ---
+        # --- 1. Compute Retention Score & Manage State Transitions ---
         centrality_map = compute_graph_centrality(snapshot.nodes, snapshot.edges)
         current_time = datetime.now()
         
         for node in snapshot.nodes:
-            # Semantic concepts have base protection
             is_concept = node.source in ("sleep", "semantic")
+            if is_concept:
+                continue
+                
             node_centrality = centrality_map.get(node.id, 0.0)
             
-            activation = calculate_node_activation(
-                node=node,
-                centrality=node_centrality,
-                current_time=current_time
-            )
+            # Compute dynamic score
+            retention_score = self.lifecycle_engine.calculate_retention_score(node, node_centrality, current_time)
+            node.metadata["retention_score"] = retention_score
             
-            node.metadata["calculated_activation"] = activation
-            
-            # Prune user episodic memories that drop below threshold
-            is_superseded_or_archived = node.metadata.get("status") in ("SUPERSEDED", "ARCHIVED")
-            if not is_concept and not is_superseded_or_archived and activation < retention_threshold:
-                nodes_to_delete.add(node.id)
-                explain = f"Flagged for pruning: Activation score ({activation:.3f}) fell below threshold ({retention_threshold})"
-                node.explain_log.append(explain)
-                timeline_events.append(f"Pruned low-activation memory: '{node.content[:30]}...' (Score: {activation:.3f})")
+            # Sync retention score to SQLite
+            try:
+                await self.provider.update_node_properties(
+                    node_id=node.id,
+                    metadata={"retention_score": retention_score}
+                )
+            except Exception as e:
+                logger.warning(f"Failed to save retention score for node {node.id}: {e}")
+                
+            # Transition evaluation
+            new_status, transition_desc = self.lifecycle_engine.evaluate_transition(node, retention_score)
+            if transition_desc:
+                node.metadata["status"] = new_status
+                if "fact" in node.metadata:
+                    node.metadata["fact"]["status"] = new_status
+                node.explain_log.append(transition_desc)
+                timeline_events.append(transition_desc)
+                
+                if new_status == "FORGOTTEN":
+                    nodes_to_delete.add(node.id)
+                else:
+                    try:
+                        await self.provider.update_node_properties(
+                            node_id=node.id,
+                            metadata={"status": new_status}
+                        )
+                    except Exception as e:
+                        logger.warning(f"Failed to update node status for {node.id}: {e}")
 
         # --- 2. Two-Stage Duplicate Detection ---
-        # Filter out superseded and archived nodes from active processing checks
-        active_nodes_for_checks = [n for n in snapshot.nodes if n.metadata.get("status", "RAW") not in ("SUPERSEDED", "ARCHIVED")]
+        # Filter out superseded, archived, and forgotten nodes from active processing checks
+        active_nodes_for_checks = [n for n in snapshot.nodes if n.metadata.get("status", "RAW") not in ("SUPERSEDED", "ARCHIVED", "FORGOTTEN")]
+
         candidates = detect_duplicate_candidates(active_nodes_for_checks, threshold=0.90)
         
         for node_a, node_b, score in candidates:

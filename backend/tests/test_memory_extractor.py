@@ -36,6 +36,7 @@ async def test_memory_extractor_fact():
         "predicate": "name",
         "object": "Nandu",
         "confidence": 0.95,
+        "importance": 0.90,
         "reason": "statement about the user's name identity"
     })
     
@@ -47,6 +48,7 @@ async def test_memory_extractor_fact():
     assert candidate.predicate == "identity.name"
     assert candidate.object == "Nandu"
     assert candidate.confidence == 0.95
+    assert candidate.importance == 0.90
 
 
 @pytest.mark.asyncio
@@ -59,6 +61,7 @@ async def test_memory_extractor_preference():
         "predicate": "likes",
         "object": "Chemex coffee",
         "confidence": 0.98,
+        "importance": 0.65,
         "reason": "statement about user's coffee preference"
     })
     
@@ -70,6 +73,7 @@ async def test_memory_extractor_preference():
     assert candidate.predicate == "likes"
     assert candidate.object == "Chemex coffee"
     assert candidate.confidence == 0.98
+    assert candidate.importance == 0.65
 
 
 @pytest.mark.asyncio
@@ -82,6 +86,7 @@ async def test_memory_extractor_delete_request():
         "predicate": "coffee preference",
         "object": "coffee",
         "confidence": 0.97,
+        "importance": 0.40,
         "reason": "user requested to forget coffee preferences"
     })
     
@@ -92,3 +97,5 @@ async def test_memory_extractor_delete_request():
     assert candidate.predicate == "coffee preference"
     assert candidate.object == "coffee"
     assert candidate.confidence == 0.97
+    assert candidate.importance == 0.40
+

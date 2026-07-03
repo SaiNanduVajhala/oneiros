@@ -31,14 +31,18 @@ function renderNodeExplain(node: MemoryNode) {
             <td style={{ padding: '8px 0', textAlign: 'right', fontWeight: 600 }}>{node.access_count} hits</td>
           </tr>
           <tr style={{ borderBottom: '1px solid var(--border-subtle)' }}>
-            <td style={{ padding: '8px 0', color: 'var(--text-tertiary)' }}>Pruning Threshold</td>
-            <td style={{ padding: '8px 0', textAlign: 'right', fontWeight: 600, color: 'var(--accent-warning)' }}>&lt; 0.25 Activation</td>
+            <td style={{ padding: '8px 0', color: 'var(--text-tertiary)' }}>Dynamic Importance</td>
+            <td style={{ padding: '8px 0', textAlign: 'right', fontWeight: 600 }}>{(node.importance * 100).toFixed(0)}%</td>
           </tr>
+          {typeof node.metadata?.retention_score === 'number' && (
+            <tr style={{ borderBottom: '1px solid var(--border-subtle)' }}>
+              <td style={{ padding: '8px 0', color: 'var(--text-tertiary)' }}>Retention Score</td>
+              <td style={{ padding: '8px 0', textAlign: 'right', fontWeight: 600, color: 'var(--accent-success)' }}>{node.metadata.retention_score.toFixed(3)}</td>
+            </tr>
+          )}
           <tr style={{ borderBottom: '1px solid var(--border-subtle)' }}>
-            <td style={{ padding: '8px 0', color: 'var(--text-tertiary)' }}>Action Taken</td>
-            <td style={{ padding: '8px 0', textAlign: 'right', fontWeight: 600, color: node.importance < 0.25 ? 'var(--accent-error)' : 'var(--accent-success)' }}>
-              {node.importance < 0.25 ? 'Evicted / Pruned' : 'Retained in Graph'}
-            </td>
+            <td style={{ padding: '8px 0', color: 'var(--text-tertiary)' }}>Pruning Threshold</td>
+            <td style={{ padding: '8px 0', textAlign: 'right', fontWeight: 600, color: 'var(--accent-warning)' }}>&lt; 0.15 Retention</td>
           </tr>
           {node.metadata?.category && (
             <tr style={{ borderBottom: '1px solid var(--border-subtle)' }}>
@@ -58,12 +62,19 @@ function renderNodeExplain(node: MemoryNode) {
               <td style={{ padding: '8px 0', textAlign: 'right', fontWeight: 600, color: 'var(--accent-primary)' }}>{node.metadata.status}</td>
             </tr>
           )}
+          {node.metadata?.last_reinforced && (
+            <tr style={{ borderBottom: '1px solid var(--border-subtle)' }}>
+              <td style={{ padding: '8px 0', color: 'var(--text-tertiary)' }}>Last Reinforced</td>
+              <td style={{ padding: '8px 0', textAlign: 'right', fontWeight: 600, fontSize: '11px' }}>{new Date(node.metadata.last_reinforced).toLocaleString()}</td>
+            </tr>
+          )}
           {node.metadata?.timestamp && (
             <tr style={{ borderBottom: '1px solid var(--border-subtle)' }}>
               <td style={{ padding: '8px 0', color: 'var(--text-tertiary)' }}>Stored Timestamp</td>
               <td style={{ padding: '8px 0', textAlign: 'right', fontWeight: 600, fontSize: '11px' }}>{new Date(node.metadata.timestamp).toLocaleString()}</td>
             </tr>
           )}
+
         </tbody>
       </table>
 

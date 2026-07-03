@@ -122,3 +122,16 @@ class MemoryProvider(ABC):
         Wipes all graph nodes and edges. Used primarily to reset storage during database seeding.
         """
         pass
+
+    async def update_node_properties(
+        self,
+        node_id: str,
+        metadata: Optional[Dict[str, Any]] = None,
+        importance: Optional[float] = None,
+        access_count: Optional[int] = None
+    ):
+        """
+        Optionally updates a node's properties and metadata in the database.
+        """
+        pass
+

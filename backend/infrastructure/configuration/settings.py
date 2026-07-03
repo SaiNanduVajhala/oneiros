@@ -25,6 +25,11 @@ class Settings:
         self.database_path = os.environ.get("DATABASE_PATH", os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data", "local_brain.db"))
         self.archive_after_sleep_cycles = int(os.environ.get("ARCHIVE_AFTER_SLEEP_CYCLES", 1))
         self.forget_after_sleep_cycles = int(os.environ.get("FORGET_AFTER_SLEEP_CYCLES", 2))
+        self.active_to_inactive_threshold = float(os.environ.get("ACTIVE_TO_INACTIVE_THRESHOLD", 0.50))
+        self.inactive_to_archived_threshold = float(os.environ.get("INACTIVE_TO_ARCHIVED_THRESHOLD", 0.30))
+        self.superseded_to_archived_threshold = float(os.environ.get("SUPERSEDED_TO_ARCHIVED_THRESHOLD", 0.30))
+        self.forget_retention_threshold = float(os.environ.get("FORGET_RETENTION_THRESHOLD", 0.15))
+
 
 
 # Instantiate settings singleton

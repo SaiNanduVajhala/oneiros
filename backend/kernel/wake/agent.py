@@ -87,7 +87,11 @@ class WakeAgent:
                 "category": candidate.category,
                 "confidence": candidate.confidence,
                 "source_message": user_message,
-                "timestamp": datetime.now().isoformat()
+                "timestamp": datetime.now().isoformat(),
+                "created_at": datetime.now().isoformat(),
+                "last_accessed": datetime.now().isoformat(),
+                "last_reinforced": datetime.now().isoformat(),
+                "retention_score": candidate.importance
             }
             
             if candidate.predicate:
@@ -101,7 +105,7 @@ class WakeAgent:
                     fact_type = "Identity"
                     
                 metadata_to_save["fact"] = {
-                    "subject": candidate.subject or "user",
+                    "subject": candidate.subject or "USER",
                     "predicate": candidate.predicate,
                     "object": candidate.object,
                     "type": fact_type,
@@ -110,7 +114,7 @@ class WakeAgent:
                 }
                 
             try:
-                memory_id = await self.provider.remember(user_message, importance=candidate.confidence, metadata=metadata_to_save)
+                memory_id = await self.provider.remember(user_message, importance=candidate.importance, metadata=metadata_to_save)
                 await event_bus.publish(Event(
                     event_type="MemoryRemembered",
                     payload={"node_id": memory_id, "content": user_message}
@@ -126,9 +130,9 @@ class WakeAgent:
 
         # 2. Context Building & Retrieval for Response Generation
         is_history = any(kw in user_message.lower() for kw in ["history", "previous", "correction", "belief", "changed", "why did", "explain why", "before", "remember before", "changelog"])
-        allowed_statuses = ("ACTIVE", "CONSOLIDATED", "RAW")
+        allowed_statuses = ("ACTIVE", "CONSOLIDATED", "RAW", "INACTIVE")
         if is_history:
-            allowed_statuses = ("ACTIVE", "CONSOLIDATED", "SUPERSEDED", "ARCHIVED", "RAW")
+            allowed_statuses = ("ACTIVE", "CONSOLIDATED", "SUPERSEDED", "ARCHIVED", "RAW", "INACTIVE")
             
         active_facts = []
         try:
@@ -146,6 +150,8 @@ class WakeAgent:
                         fact["subject"] = "USER"
                     if pred == "name":
                         fact["predicate"] = "identity.name"
+                    fact["node_id"] = nid
+                    fact["access_count"] = props.get("access_count", 1)
                     active_facts.append(fact)
         except Exception as e:
             logger.warning(f"Failed to query active structured facts index: {e}")
@@ -154,6 +160,14 @@ class WakeAgent:
         identities = []
         preferences = []
         other_facts = []
+        matched_facts = []
+        
+        PERSONAL_FACT_KEYWORDS = [
+            "who am i", "my name", "favorite", "where do i live",
+            "what do i do", "my occupation", "where am i", "my age",
+            "what language do i", "my preference", "my goal", "my skill"
+        ]
+        is_personal_query = any(kw in user_message.lower() for kw in PERSONAL_FACT_KEYWORDS)
         
         for f in active_facts:
             subj = str(f.get("subject", "USER")).upper()
@@ -161,6 +175,29 @@ class WakeAgent:
             fact_type = str(f.get("type", "")).lower()
             
             desc = f"USER's {f.get('predicate')} is {f.get('object')}"
+            
+            is_match = False
+            if pred in user_message.lower() or fact_type in user_message.lower():
+                is_match = True
+            elif is_personal_query and "who am i" in user_message.lower():
+                is_match = True
+                
+            if is_match:
+                matched_facts.append(f)
+                nid = f.get("node_id")
+                if nid:
+                    try:
+                        new_count = f.get("access_count", 1) + 1
+                        await self.provider.update_node_properties(
+                            node_id=nid,
+                            metadata={
+                                "last_accessed": datetime.now().isoformat(),
+                                "last_reinforced": datetime.now().isoformat()
+                            },
+                            access_count=new_count
+                        )
+                    except Exception as e:
+                        logger.warning(f"Failed to reinforce matched memory {nid}: {e}")
             
             if pred == "identity.name" or fact_type == "identity":
                 identities.append(desc)

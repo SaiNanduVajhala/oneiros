@@ -26,6 +26,7 @@ SYSTEM_EXTRACTOR_PROMPT = (
     "- 'predicate': string representing the relationship/property (e.g. 'name', 'favorite_color', 'likes', 'hates', 'residence', 'occupation', 'reminder') or null if not applicable.\n"
     "- 'object': string representing the value/object of the predicate (e.g. 'Nandu', 'Chemex coffee', 'build CUDA FlashAttention', 'Hyderabad') or null if not applicable.\n"
     "- 'confidence': float (0.0 to 1.0) indicating your confidence in this classification and extraction.\n"
+    "- 'importance': float (0.0 to 1.0) indicating how critical, valuable, or durable this information is over the long term (e.g. peanut allergy or legal name is 0.9-1.0; favorite color or general preference is 0.4-0.6; transient notes or basic facts are 0.2-0.4).\n"
     "- 'reason': string briefly explaining your classification."
 )
 
@@ -61,12 +62,21 @@ class MemoryExtractor:
             if predicate and str(predicate).lower() in ("name", "identity.name"):
                 predicate = "identity.name"
                 
+            # Extract importance and run heuristic fallback if missing or invalid
+            importance = extracted.get("importance")
+            if importance is None:
+                importance_map = {"FACT": 0.75, "FACT_UPDATE": 0.75, "PREFERENCE": 0.50, "TASK": 0.40}
+                importance = importance_map.get(category, 0.30)
+            else:
+                importance = float(importance)
+                
             return MemoryCandidate(
                 category=category,
                 subject=subject,
                 predicate=predicate,
                 object=extracted.get("object"),
                 confidence=float(extracted.get("confidence", 1.0)),
+                importance=importance,
                 source_message=user_message
             )
         except Exception as e:
@@ -74,5 +84,6 @@ class MemoryExtractor:
             return MemoryCandidate(
                 category="CHAT",
                 confidence=1.0,
+                importance=0.30,
                 source_message=user_message
             )

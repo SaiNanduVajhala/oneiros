@@ -59,5 +59,7 @@ class MemoryCandidate(BaseModel):
     predicate: Optional[str] = None
     object: Optional[str] = None
     confidence: float = 1.0
+    importance: float = 0.5
     source_message: str
+
 
