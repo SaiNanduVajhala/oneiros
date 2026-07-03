@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useDreamState } from './hooks/useDreamState';
 import { Header } from './components/Header';
 import { AgentConsole } from './components/AgentConsole';
@@ -6,7 +6,7 @@ import { GraphViewport } from './components/GraphViewport';
 import { DreamReplay } from './components/DreamReplay';
 import { CognitiveMRI } from './components/CognitiveMRI';
 import { ExplainPanel } from './components/ExplainPanel';
-import { DevDrawer } from './components/DevDrawer';
+import { DevConsolePage } from './components/DevConsolePage';
 import './App.css';
 
 function App() {
@@ -33,7 +33,17 @@ function App() {
   } = useDreamState();
 
   const [playbackIndex, setPlaybackIndex] = useState<number>(-1);
-  const [isDevDrawerOpen, setIsDevDrawerOpen] = useState<boolean>(false);
+  const [isDebugPage, setIsDebugPage] = useState<boolean>(
+    window.location.hash === '#debug' || window.location.hash === '#/debug'
+  );
+
+  useEffect(() => {
+    const handleHash = () => {
+      setIsDebugPage(window.location.hash === '#debug' || window.location.hash === '#/debug');
+    };
+    window.addEventListener('hashchange', handleHash);
+    return () => window.removeEventListener('hashchange', handleHash);
+  }, []);
 
   const isPlayingBack = playbackIndex >= 0 && playbackIndex < snapshots.length;
   const currentSnapshot = isPlayingBack ? snapshots[playbackIndex] : null;
@@ -62,9 +72,30 @@ function App() {
 
   const isAwake = status === 'idle';
 
+  if (isDebugPage) {
+    return (
+      <DevConsolePage
+        onBackToApp={() => {
+          window.location.hash = '';
+          setIsDebugPage(false);
+        }}
+        nodes={graphNodes}
+        edges={graphEdges}
+      />
+    );
+  }
+
   return (
     <>
-      <Header status={status} onDream={startDream} onWakeUp={wakeUp} onToggleDev={() => setIsDevDrawerOpen(prev => !prev)} />
+      <Header
+        status={status}
+        onDream={startDream}
+        onWakeUp={wakeUp}
+        onToggleDev={() => {
+          window.location.hash = '#debug';
+          setIsDebugPage(true);
+        }}
+      />
 
       <div className="dashboard-layout">
         {isAwake ? (
@@ -168,12 +199,9 @@ function App() {
       </div>
 
       <ExplainPanel item={selectedItem} onClose={() => setSelectedItem(null)} />
-
-      {import.meta.env.VITE_DEV_MODE === 'true' && (
-        <DevDrawer isOpen={isDevDrawerOpen} onClose={() => setIsDevDrawerOpen(false)} />
-      )}
     </>
   );
 }
 
 export default App;
+
