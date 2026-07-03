@@ -19,7 +19,38 @@
 | **July 2** | **Day 4: Developer Console & Page Layout Optimization** | <ul><li>✅ Developed collapsible Developer Drawer console (`DevDrawer.tsx`) to query status and run stages</li><li>✅ Added debug router endpoints (`/api/debug/status`, `/api/debug/config`, `/api/debug/stage`, `/api/debug/reset`)</li><li>✅ Optimized dashboard grid layouts and panel heights to enable viewport-constrained scrolling</li></ul> |
 | **July 3** | **Day 5: Graph UX, Deletion, Fallbacks & Cognitive Gate** | <ul><li>✅ Added **2D/3D graph toggle** — force-directed 2D canvas view alongside the 3D Three.js view</li><li>✅ Fixed **tooltip sticky bug** — tooltip clears immediately on mouse-leave in both 2D and 3D views</li><li>✅ Removed node labels from 2D canvas — decluttered, only hover tooltip shows content</li><li>✅ Added **per-node delete** — hover tooltip shows 🗑 Delete button with confirmation</li><li>✅ Added **Clear All memories** — header button with full-panel overlay confirmation</li><li>✅ Filtered Cognee internal nodes (`text_<hash>`, `#textdocument`, `#dataset`, `user:<hash>`, `oneiros_*`) from graphs and lists</li><li>✅ Fixed memories endpoint to **fall back to Cognee Cloud** when SQLite mirror is empty (e.g. after reset)</li><li>✅ Implemented **Cognitive Dream Gate** — sleep cycle skips automatically when there are fewer than 3 real episodic memories, returning a skip report</li></ul> |
 | **July 4** | **Day 6: Full-Page Observatory Dev Console & Cleanups** | <ul><li>✅ Replaced developer drawer with a full-page **Developer Console Page** (at `#/debug`) containing 15 diagnostic sections, testing utilities, self-tests, and real-time backend log streaming</li><li>✅ Redesigned Developer Console styling to use the "Warm Observatory" palette and local Geist fonts</li><li>✅ Added background auto-connection status check triggering Cognee serve connect automatically on startup</li><li>✅ Stripped navigation emojis, replacing them with modern inline vector SVG icons</li><li>✅ Cleaned up workspace folder structure, deleting prompt design reference files, redundant sliding drawer files, and empty ignored folders from Git tracking (`backend/backend`, `backend/scripts`, `backend/data`)</li></ul> |
-| **July 5** | **Day 7: Performance Verification & Launch** | <ul><li>🟡 Preparing technical explanation documentation and final review</li></ul> |
+| **July 5** | **Day 7: Performance Verification & Launch** | <ul><li>✅ Implemented three-tier memory architecture separating transient Working Memory from Cognee Cloud long-term memory retrieval</li><li>✅ Added comprehensive unit tests for Working Memory and WakeAgent</li><li>✅ Completed final validation and launch review</li></ul> |
+
+---
+
+## 🧠 Three-Tier Memory Architecture
+
+To enable instant retrieval of recent conversation history and contradictions (like updating preferences) without requiring a sleep cycle first, Oneiros implements a three-tier memory structure:
+
+1.  **Working Memory (Transient)**:
+    *   **In-Memory History**: Maintained by a dedicated in-memory history window (`WorkingMemory` in `working_memory.py`) limiting context to the last 20 conversation turns.
+    *   **No Latency/Embeddings**: Runs entirely in RAM without SQL queries, embeddings, or vector recall.
+    *   **Contradiction Detection**: Queried immediately before every response to feed the LLM with instant conversation turns context.
+2.  **Long-Term Memory (Cognee Cloud)**:
+    *   **Semantic Recall**: Serves as the single cognitive/intelligence source of truth for semantic vector queries.
+    *   **Optimization**: Populated immediately through `remember()`, and structured, consolidated, and abstracted during sleep.
+3.  **Infrastructure Caching & Visualization (SQLite)**:
+    *   **Isolated Persistence**: Used strictly for offline visualization layout caching, event logging, and UI sidebar representation.
+    *   **Decoupled**: Completely isolated from the conversational retrieval and intelligence loops.
+
+When generating a response during Wake mode, Oneiros constructs a structured prompt combining these tiers:
+
+```
+=== RECENT CONVERSATION ===
+{working_memory_str}
+
+=== LONG-TERM MEMORY ===
+{long_term_memory_str}
+
+=== USER MESSAGE ===
+{user_message}
+```
+
 
 ---
 

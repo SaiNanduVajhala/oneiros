@@ -14,6 +14,7 @@ from events.event_bus import event_bus
 from events.events import Event
 from kernel.reasoning.context_builder import ContextBuilder
 from kernel.reasoning.llm import ReasoningEngine
+from kernel.wake.working_memory import working_memory
 
 logger = logging.getLogger("oneiros.kernel.wake.agent")
 
@@ -78,6 +79,7 @@ class WakeAgent:
 
         context_items = []
         memory_status = "active"
+        long_term_memory_str = ""
         
         # Consult structured facts index first. Only if nothing is found fall back to semantic recall.
         if matched_facts:
@@ -85,10 +87,11 @@ class WakeAgent:
                 f"Structured Fact: {f.get('subject', 'user')}'s {f.get('predicate')} is {f.get('object')} (Type: {f.get('type')})"
                 for f in matched_facts
             ]
-            context_str = "Structured Facts Context:\n" + "\n".join(context_items)
+            long_term_memory_str = "Structured Facts Context:\n" + "\n".join(context_items)
             logger.info(f"Structured facts index matched. Bypassing semantic recall. Context: {context_items}")
         else:
             # Fallback to semantic memory recall
+            recall_results = []
             try:
                 recall_results = await self.provider.recall(user_message)
                 context_items = [r.get("text", str(r)) for r in recall_results]
@@ -98,14 +101,25 @@ class WakeAgent:
             except Exception as e:
                 memory_status = "error"
                 logger.error(f"Error retrieving memories: {e}")
-            context_str = ContextBuilder.build_context_string(recall_results if 'recall_results' in locals() else [])
+            long_term_memory_str = ContextBuilder.build_context_string(recall_results)
+
+        # Get recent Working Memory history string
+        working_memory_str = working_memory.get_context_string()
 
         # 2. Call Reasoning Engine to generate response
         try:
-            answer = await self.reasoning_engine.reason_wake(user_message, context_str)
+            answer = await self.reasoning_engine.reason_wake(
+                user_message=user_message,
+                working_memory_str=working_memory_str,
+                long_term_memory_str=long_term_memory_str
+            )
         except Exception as e:
             logger.error(f"LLM Reasoning execution failed: {e}")
             answer = f"Error generating answer: {e}"
+
+        # 3. Save turn to Working Memory
+        working_memory.add_message("user", user_message)
+        working_memory.add_message("assistant", answer)
 
         # 3. Heuristic Fact Detection & Structured Fact Ingestion
         metadata_to_save = {"status": "RAW"}

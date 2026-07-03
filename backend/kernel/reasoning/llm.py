@@ -19,12 +19,13 @@ class ReasoningEngine:
     def __init__(self, client: Optional[GeminiClient] = None):
         self.client = client or GeminiClient()
 
-    async def reason_wake(self, user_message: str, context_str: str) -> str:
+    async def reason_wake(self, user_message: str, working_memory_str: str, long_term_memory_str: str) -> str:
         """
         Coordinates reasoning for the Wake Phase conversation.
         """
         user_prompt = USER_WAKE_TEMPLATE.format(
-            context_str=context_str,
+            working_memory_str=working_memory_str,
+            long_term_memory_str=long_term_memory_str,
             user_message=user_message
         )
         return await self.client.generate_response(
