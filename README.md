@@ -9,6 +9,21 @@
 
 ---
 
+## 📅 7-Day Build Plan & Execution Timeline (June 29 – July 5)
+
+| Date | Phase | Deliverables Built & Status |
+| :--- | :--- | :--- |
+| **June 29** | **Day 1: Foundation & Dependency Inversion** | <ul><li>✅ Created project structure & domain schemas (`MemoryNode`, `MemoryEdge`, `DreamReport`)</li><li>✅ Designed abstract `MemoryProvider` contract preventing circular dependencies</li><li>✅ Initialized wake chat session handler (`WakeAgent`) and stages coordinator</li></ul> |
+| **June 30** | **Day 2: Sleep Stages & Cognitive Algorithms** | <ul><li>✅ Built **N1 Replay** implementing weighted exponential activation decay</li><li>✅ Built **N2 Consolidation** with DBSCAN semantic clustering (via scikit-learn)</li><li>✅ Built **N3 Pruning** with auto-merge ($\ge 0.995$), LLM validator ($\ge 0.90$), & contradiction prune</li><li>✅ Built **REM Abstraction** creating concept nodes & cross-cluster latent linking</li></ul> |
+| **July 1** | **Day 3: Cloud Migration, 3D Graph & Clean Audit** | <ul><li>✅ Migrated memory layer to **Cognee Cloud** via `CogneeClient` and `CogneeCloudProvider`</li><li>✅ Implemented **asynchronous write lock & queue** synchronization during sleep stages</li><li>✅ Built **WebGL Synaptic Shader Background** and **Three.js 3D Graph Viewport**</li><li>✅ Performed complete backend audit, deleting 12 dead files & securing concurrency via `asyncio.Lock()`</li></ul> |
+| **July 2** | **Day 4: Developer Console & Page Layout Optimization** | <ul><li>✅ Developed collapsible Developer Drawer console (`DevDrawer.tsx`) to query status, config, and run individual stages</li><li>✅ Added debug router endpoints (`/api/debug/status`, `/api/debug/config`, `/api/debug/stage`, `/api/debug/reset`)</li><li>✅ Optimized dashboard grid layouts and panel heights to enable viewport-constrained scrolling</li></ul> |
+| **July 3** | **Day 5: Direct Memories Feed & Core Site Completion** | <ul><li>✅ Built backend Memories feed database endpoint (`GET /api/chat/memories`) querying nodes table directly</li><li>✅ Refactored Memories tab in `AgentConsole.tsx` to list ingested raw memories immediately</li><li>✅ Completed core features, databases, and api integrations</li></ul> |
+| **July 4** | **Day 6: Interface Polish & Demo Video** | <ul><li>🟡 Polishing glassmorphism layouts, typography, micro-interactions, and visual shaders</li><li>🟡 Making the walkthrough demo video</li></ul> |
+| **July 5** | **Day 7: Explanation & Launch** | <ul><li>🟡 Preparing technical explanation documentation, codebase logs, and final review</li></ul> |
+
+---
+
+
 ## ⚠️ The Problem
 
 Current AI architectures treat memory as a flat database. As agents interact with users, they continuously append raw experience statements. 

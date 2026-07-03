@@ -18,6 +18,7 @@ function App() {
     graphNodes,
     graphEdges,
     snapshots,
+    storedMemories,
     chatMessages,
     chatHistory,
     clearChatHistory,
@@ -74,6 +75,7 @@ function App() {
                 onClearHistory={clearChatHistory}
                 isLoading={isSending}
                 nodes={displayNodes}
+                storedMemories={storedMemories}
                 onNodeClick={handleNodeClick}
               />
             </div>

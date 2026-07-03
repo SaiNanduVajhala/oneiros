@@ -9,6 +9,7 @@ interface AgentConsoleProps {
   onClearHistory?: () => void;
   isLoading?: boolean;
   nodes?: MemoryNode[];
+  storedMemories?: MemoryNode[];
   onNodeClick?: (node: MemoryNode) => void;
 }
 
@@ -19,6 +20,7 @@ export function AgentConsole({
   onClearHistory,
   isLoading = false,
   nodes = [],
+  storedMemories = [],
   onNodeClick,
 }: AgentConsoleProps) {
   const [activeTab, setActiveTab] = useState<'console' | 'history' | 'memories'>('console');
@@ -53,9 +55,9 @@ export function AgentConsole({
     msg.content.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const filteredNodes = nodes.filter(node =>
+  const filteredNodes = storedMemories.filter(node =>
     node.content.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    node.semantic_tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()))
+    (node.semantic_tags && node.semantic_tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase())))
   );
 
   return (

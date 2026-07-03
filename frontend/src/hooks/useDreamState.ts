@@ -11,6 +11,7 @@ export interface DreamState {
   graphNodes: MemoryNode[];
   graphEdges: MemoryEdge[];
   snapshots: StageSnapshot[];
+  storedMemories: MemoryNode[];
   chatMessages: ChatMessage[];
   chatHistory: ChatMessage[];
   clearChatHistory: () => void;
@@ -29,6 +30,7 @@ export function useDreamState(): DreamState {
   const [metrics, setMetrics] = useState<MetricsSnapshot | null>(null);
   const [graphNodes, setGraphNodes] = useState<MemoryNode[]>([]);
   const [graphEdges, setGraphEdges] = useState<MemoryEdge[]>([]);
+  const [storedMemories, setStoredMemories] = useState<MemoryNode[]>([]);
   const [snapshots, setSnapshots] = useState<StageSnapshot[]>([]);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [chatHistory, setChatHistory] = useState<ChatMessage[]>(() => {
@@ -117,10 +119,29 @@ export function useDreamState(): DreamState {
     }
   }, []);
 
+  const fetchMemories = useCallback(async () => {
+    try {
+      const res = await fetch(`http://localhost:8000/api/chat/memories`);
+      const data = await res.json();
+      if (data.nodes) {
+        setStoredMemories(data.nodes.map((n: any) => ({
+          ...n,
+          timestamp: n.timestamp || new Date().toISOString(),
+          last_accessed: n.last_accessed || new Date().toISOString(),
+          metadata: n.metadata || {},
+          explain_log: n.explain_log || [],
+        })));
+      }
+    } catch (err) {
+      console.error('Failed to fetch memories:', err);
+    }
+  }, []);
+
   // Fetch initial graph and state on mount
   useEffect(() => {
     fetchResults();
-  }, [fetchResults]);
+    fetchMemories();
+  }, [fetchResults, fetchMemories]);
 
   const startDream = useCallback(async () => {
     setStatus('dreaming');
@@ -180,6 +201,7 @@ export function useDreamState(): DreamState {
       setChatMessages(prev => [...prev, assistantMsg]);
       setChatHistory(prev => [...prev, assistantMsg]);
       await fetchResults();
+      await fetchMemories();
     } catch {
       const errMsg: ChatMessage = {
         role: 'assistant',
@@ -205,6 +227,7 @@ export function useDreamState(): DreamState {
     graphNodes,
     graphEdges,
     snapshots,
+    storedMemories,
     chatMessages,
     chatHistory,
     clearChatHistory,
