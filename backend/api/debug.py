@@ -101,6 +101,12 @@ async def get_status(provider: MemoryProvider = Depends(get_memory_provider)):
     
     connected = False
     if hasattr(provider, "client"):
+        # Trigger connection in the background so status check transitions to Online on start
+        if not getattr(provider.client, "_connected", False):
+            try:
+                asyncio.create_task(provider.client.connect())
+            except Exception:
+                pass
         connected = getattr(provider.client, "_connected", False)
         
     sleep_status = api.dream._sleep_status

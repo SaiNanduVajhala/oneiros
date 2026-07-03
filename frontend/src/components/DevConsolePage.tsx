@@ -485,31 +485,71 @@ export function DevConsolePage({ onBackToApp, nodes, edges }: DevConsolePageProp
         <aside className="dev-console-sidebar">
           <nav className="dev-console-nav">
             <button className={`dev-console-nav-item ${activeTab === 'dashboard' ? 'dev-console-nav-item--active' : ''}`} onClick={() => setActiveTab('dashboard')}>
-              📊 Status & Telemetry
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: '6px' }}>
+                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                <line x1="3" y1="9" x2="21" y2="9"/>
+                <line x1="9" y1="21" x2="9" y2="9"/>
+              </svg>
+              Status & Telemetry
             </button>
             <button className={`dev-console-nav-item ${activeTab === 'sandbox' ? 'dev-console-nav-item--active' : ''}`} onClick={() => setActiveTab('sandbox')}>
-              📥 Memory Sandbox
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: '6px' }}>
+                <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+                <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
+                <line x1="12" y1="22.08" x2="12" y2="12"/>
+              </svg>
+              Memory Sandbox
             </button>
             <button className={`dev-console-nav-item ${activeTab === 'sleep' ? 'dev-console-nav-item--active' : ''}`} onClick={() => setActiveTab('sleep')}>
-              🛌 Sleep Stage Engine
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: '6px' }}>
+                <path d="M2 4v16M2 8h18a2 2 0 0 1 2 2v10M2 12H12M2 16h14"/>
+              </svg>
+              Sleep Stage Engine
             </button>
             <button className={`dev-console-nav-item ${activeTab === 'graph' ? 'dev-console-nav-item--active' : ''}`} onClick={() => setActiveTab('graph')}>
-              🕸️ Graph Inspector
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: '6px' }}>
+                <circle cx="18" cy="5" r="3"/>
+                <circle cx="6" cy="12" r="3"/>
+                <circle cx="18" cy="19" r="3"/>
+                <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/>
+                <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
+              </svg>
+              Graph Inspector
             </button>
             <button className={`dev-console-nav-item ${activeTab === 'cognee' ? 'dev-console-nav-item--active' : ''}`} onClick={() => setActiveTab('cognee')}>
-              ☁️ Cognee Inspector
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: '6px' }}>
+                <path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/>
+              </svg>
+              Cognee Inspector
             </button>
             <button className={`dev-console-nav-item ${activeTab === 'queue' ? 'dev-console-nav-item--active' : ''}`} onClick={() => setActiveTab('queue')}>
-              📦 Concurrency Queue
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: '6px' }}>
+                <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+              </svg>
+              Concurrency Queue
             </button>
             <button className={`dev-console-nav-item ${activeTab === 'explain' ? 'dev-console-nav-item--active' : ''}`} onClick={() => setActiveTab('explain')}>
-              🔬 Explainability Check
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: '6px' }}>
+                <circle cx="11" cy="11" r="8"/>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+              </svg>
+              Explainability Check
             </button>
             <button className={`dev-console-nav-item ${activeTab === 'logs' ? 'dev-console-nav-item--active' : ''}`} onClick={() => setActiveTab('logs')}>
-              🪵 Backend logs
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: '6px' }}>
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                <polyline points="14 2 14 8 20 8"/>
+                <line x1="16" y1="13" x2="8" y2="13"/>
+                <line x1="16" y1="17" x2="8" y2="17"/>
+              </svg>
+              Backend Logs
             </button>
             <button className={`dev-console-nav-item ${activeTab === 'utilities' ? 'dev-console-nav-item--active' : ''}`} onClick={() => setActiveTab('utilities')}>
-              ⚙️ Verification Tools
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: '6px' }}>
+                <polyline points="22 11.08 22 12 12 22 4 14 5.41 12.59 12 19.17 20.59 10.58 22 11.08"/>
+                <path d="M22 4L12 14.01l-3-3"/>
+              </svg>
+              Verification Tools
             </button>
           </nav>
           <div className="dev-console-sidebar__footer">

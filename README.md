@@ -16,11 +16,10 @@
 | **June 29** | **Day 1: Foundation & Dependency Inversion** | <ul><li>✅ Created project structure & domain schemas (`MemoryNode`, `MemoryEdge`, `DreamReport`)</li><li>✅ Designed abstract `MemoryProvider` contract preventing circular dependencies</li><li>✅ Initialized wake chat session handler (`WakeAgent`) and stages coordinator</li></ul> |
 | **June 30** | **Day 2: Sleep Stages & Cognitive Algorithms** | <ul><li>✅ Built **N1 Replay** implementing weighted exponential activation decay</li><li>✅ Built **N2 Consolidation** with DBSCAN semantic clustering (via scikit-learn)</li><li>✅ Built **N3 Pruning** with auto-merge ($\ge 0.995$), LLM validator ($\ge 0.90$), & contradiction prune</li><li>✅ Built **REM Abstraction** creating concept nodes & cross-cluster latent linking</li></ul> |
 | **July 1** | **Day 3: Cloud Migration, 3D Graph & Clean Audit** | <ul><li>✅ Migrated memory layer to **Cognee Cloud** via `CogneeClient` and `CogneeCloudProvider`</li><li>✅ Implemented **asynchronous write lock & queue** synchronization during sleep stages</li><li>✅ Built **WebGL Synaptic Shader Background** and **Three.js 3D Graph Viewport**</li><li>✅ Performed complete backend audit, deleting 12 dead files & securing concurrency via `asyncio.Lock()`</li></ul> |
-| **July 2** | **Day 4: Developer Console & Page Layout Optimization** | <ul><li>✅ Developed collapsible Developer Drawer console (`DevDrawer.tsx`) to query status, config, and run individual stages</li><li>✅ Added debug router endpoints (`/api/debug/status`, `/api/debug/config`, `/api/debug/stage`, `/api/debug/reset`)</li><li>✅ Optimized dashboard grid layouts and panel heights to enable viewport-constrained scrolling</li></ul> |
-| **July 3** | **Day 5: Direct Memories Feed & Core Site Completion** | <ul><li>✅ Built backend Memories feed database endpoint (`GET /api/chat/memories`) querying nodes table directly</li><li>✅ Refactored Memories tab in `AgentConsole.tsx` to list ingested raw memories immediately</li><li>✅ Completed core features, databases, and api integrations</li></ul> |
-| **July 3** | **Day 5 (cont.): Graph UX, Memory Management & Cognitive Gate** | <ul><li>✅ Added **2D/3D graph toggle** — force-directed 2D canvas view alongside the 3D Three.js view</li><li>✅ Fixed **tooltip sticky bug** — tooltip clears immediately on mouse-leave in both 2D and 3D views</li><li>✅ Removed node labels from 2D canvas — decluttered, only hover tooltip shows content</li><li>✅ Added **per-node delete** — hover tooltip shows 🗑 Delete button with confirmation</li><li>✅ Added **Clear All memories** — header button with full-panel overlay confirmation</li><li>✅ Added `DELETE /api/chat/memories/{id}` and `DELETE /api/chat/memories` endpoints</li><li>✅ Filtered Cognee internal nodes (`text_<hash>`, `#textdocument`, `#dataset`, `user:<hash>`, `oneiros_*`) from graph, memories list, and DevDrawer — only real user memories shown</li><li>✅ Fixed memories endpoint to **fall back to Cognee Cloud** when SQLite mirror is empty (e.g. after reset)</li><li>✅ Implemented **Cognitive Dream Gate** — sleep cycle skips automatically when there are fewer than 3 real episodic memories, returning a meaningful skip report instead of running an empty cycle</li><li>✅ Fixed DevDrawer Provenance Explorer to display real user memories (fetching from `/api/chat/memories`) instead of raw Cognee graph data</li></ul> |
-| **July 4** | **Day 6: Interface Polish & Demo Video** | <ul><li>🟡 Polishing glassmorphism layouts, typography, micro-interactions, and visual shaders</li><li>🟡 Making the walkthrough demo video</li></ul> |
-| **July 5** | **Day 7: Explanation & Launch** | <ul><li>🟡 Preparing technical explanation documentation, codebase logs, and final review</li></ul> |
+| **July 2** | **Day 4: Developer Console & Page Layout Optimization** | <ul><li>✅ Developed collapsible Developer Drawer console (`DevDrawer.tsx`) to query status and run stages</li><li>✅ Added debug router endpoints (`/api/debug/status`, `/api/debug/config`, `/api/debug/stage`, `/api/debug/reset`)</li><li>✅ Optimized dashboard grid layouts and panel heights to enable viewport-constrained scrolling</li></ul> |
+| **July 3** | **Day 5: Graph UX, Deletion, Fallbacks & Cognitive Gate** | <ul><li>✅ Added **2D/3D graph toggle** — force-directed 2D canvas view alongside the 3D Three.js view</li><li>✅ Fixed **tooltip sticky bug** — tooltip clears immediately on mouse-leave in both 2D and 3D views</li><li>✅ Removed node labels from 2D canvas — decluttered, only hover tooltip shows content</li><li>✅ Added **per-node delete** — hover tooltip shows 🗑 Delete button with confirmation</li><li>✅ Added **Clear All memories** — header button with full-panel overlay confirmation</li><li>✅ Filtered Cognee internal nodes (`text_<hash>`, `#textdocument`, `#dataset`, `user:<hash>`, `oneiros_*`) from graphs and lists</li><li>✅ Fixed memories endpoint to **fall back to Cognee Cloud** when SQLite mirror is empty (e.g. after reset)</li><li>✅ Implemented **Cognitive Dream Gate** — sleep cycle skips automatically when there are fewer than 3 real episodic memories, returning a skip report</li></ul> |
+| **July 4** | **Day 6: Full-Page Observatory Dev Console & Cleanups** | <ul><li>✅ Replaced developer drawer with a full-page **Developer Console Page** (at `#/debug`) containing 15 diagnostic sections, testing utilities, self-tests, and real-time backend log streaming</li><li>✅ Redesigned Developer Console styling to use the "Warm Observatory" palette and local Geist fonts</li><li>✅ Added background auto-connection status check triggering Cognee serve connect automatically on startup</li><li>✅ Stripped navigation emojis, replacing them with modern inline vector SVG icons</li><li>✅ Cleaned up workspace folder structure, deleting prompt design reference files, redundant sliding drawer files, and empty ignored folders from Git tracking (`backend/backend`, `backend/scripts`, `backend/data`)</li></ul> |
+| **July 5** | **Day 7: Performance Verification & Launch** | <ul><li>🟡 Preparing technical explanation documentation and final review</li></ul> |
 
 ---
 
@@ -64,6 +63,10 @@ The agent interacts with the user, showing live memory node additions in the 3D 
 The dashboard shifts into a dreaming console, visually replaying, clustering, pruning, and synthesizing concepts.
 ![Dreaming State](docs/images/Oneiros__Dreaming_Live_screenshot.png)
 ![Stage Playback](docs/images/Oneiros__Dreaming_N2_Consolidation_screenshot.png)
+
+### 🛠️ Developer & Diagnostic Console (Engineering Panel)
+Accessible via `#/debug`, this view exposes real-time telemetry, sandbox controls, live SSE event buffers, database resets, and self-testing suites.
+![Developer Console](docs/images/Oneiros__Dev_Console_screenshot.png)
 
 ---
 
@@ -187,6 +190,9 @@ Create a `.env` file in the workspace root directory:
 # API Credentials
 GEMINI_API_KEY=your_gemini_api_key
 COGNEE_API_KEY=your_cognee_api_key
+COGNEE_BASE_URL=your_cognee_aws_tenant_url   # Optional (required for cloud tenant endpoints)
+GROQ_API_KEY=your_groq_api_key               # Optional (if running llama models on Groq)
+LLM_MODEL=groq/llama-3.3-70b-versatile       # Optional (override model selection)
 ```
 
 ### 2. Startup Commands
