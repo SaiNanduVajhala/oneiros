@@ -35,6 +35,13 @@ async def chat_endpoint(request: ChatRequest, provider: MemoryProvider = Depends
         raise HTTPException(status_code=400, detail="User message content cannot be empty.")
         
     try:
+        # Reset dream coordinator snapshots so the main graph defaults to the live DB mirror
+        try:
+            from api.dream import reset_dream_coordinator
+            reset_dream_coordinator()
+        except Exception:
+            pass
+
         agent = WakeAgent(provider)
         result = await agent.handle_interaction(request.message)
         return result
@@ -42,6 +49,7 @@ async def chat_endpoint(request: ChatRequest, provider: MemoryProvider = Depends
         import traceback
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Interaction execution failed: {e}")
+
 
 
 @router.get("/memories")

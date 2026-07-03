@@ -114,11 +114,18 @@ async def sleep_events_sse():
     )
 
 
+def reset_dream_coordinator():
+    """Resets the current dream coordinator and sets status back to idle (called when returning to Wake phase)."""
+    global _current_coordinator, _sleep_status
+    _current_coordinator = None
+    _sleep_status = "idle"
+
+
 @router.get("/graph")
 async def get_graph(provider: MemoryProvider = Depends(get_memory_provider)):
     """Returns the current graph state from the latest coordinator, or falls back to database."""
-    global _current_coordinator
-    if _current_coordinator and _current_coordinator.stage_snapshots:
+    global _current_coordinator, _sleep_status
+    if _sleep_status == "dreaming" and _current_coordinator and _current_coordinator.stage_snapshots:
         latest = _current_coordinator.stage_snapshots[-1]
         return {
             "stage": latest.stage,
@@ -128,7 +135,7 @@ async def get_graph(provider: MemoryProvider = Depends(get_memory_provider)):
             "edge_count": latest.edge_count
         }
     try:
-        nodes_raw, edges_raw = await provider.get_graph_data(consolidated_only=True)
+        nodes_raw, edges_raw = await provider.get_graph_data(consolidated_only=False)
         nodes_json = [
             {
                 "id": nid,
@@ -157,6 +164,7 @@ async def get_graph(provider: MemoryProvider = Depends(get_memory_provider)):
     except Exception as e:
         logger.error(f"Fallback graph loading failed: {e}")
         return {"stage": "none", "nodes": [], "edges": [], "node_count": 0, "edge_count": 0}
+
 
 
 @router.get("/graph/snapshots")
