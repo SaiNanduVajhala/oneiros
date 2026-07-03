@@ -30,6 +30,8 @@ function App() {
     isSending,
     deleteNode,
     deleteAllMemories,
+    showHistory,
+    setShowHistory,
   } = useDreamState();
 
   const [playbackIndex, setPlaybackIndex] = useState<number>(-1);
@@ -122,6 +124,8 @@ function App() {
                   onNodeClick={handleNodeClick}
                   onDeleteNode={deleteNode}
                   onDeleteAll={deleteAllMemories}
+                  showHistory={showHistory}
+                  setShowHistory={setShowHistory}
                 />
               </div>
             </div>
@@ -140,6 +144,8 @@ function App() {
                 onNodeClick={handleNodeClick}
                 onDeleteNode={deleteNode}
                 onDeleteAll={deleteAllMemories}
+                showHistory={showHistory}
+                setShowHistory={setShowHistory}
               />
             </div>
 

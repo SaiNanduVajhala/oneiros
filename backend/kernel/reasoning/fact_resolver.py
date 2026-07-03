@@ -77,17 +77,59 @@ class FactResolver:
             logger.error(f"Structured fact extraction failed: {e}")
             return None
 
-    def resolve_conflicts(self, snapshot: MemoryGraphSnapshot) -> Tuple[MemoryGraphSnapshot, List[str]]:
+    def resolve_conflicts(self, snapshot: MemoryGraphSnapshot) -> Tuple[MemoryGraphSnapshot, List[str], List[str]]:
         """
         Identifies and marks conflicting structured facts. Runs after Consolidation and before Pruning.
-        Transitions conflicting losers to 'SUPERSEDED' or 'ARCHIVED' status and adds 'SUPERSEDED_BY' edges.
+        Implements the 4-stage factual memory lifecycle: ACTIVE -> SUPERSEDED -> ARCHIVED -> FORGOTTEN.
+        Returns:
+            Tuple[MemoryGraphSnapshot, List[str], List[str]]: Updated snapshot, timeline logs, and list of node IDs to forget.
         """
-        logger.info("Executing structured fact conflict resolution...")
+        logger.info("Executing structured fact conflict resolution with memory lifecycle...")
         timeline_events = []
+        forgotten_ids = []
         
-        # 1. Gather all nodes with active/consolidated facts
-        active_nodes: List[MemoryNode] = []
+        from infrastructure.configuration.settings import settings
+        archive_threshold = settings.archive_after_sleep_cycles
+        forget_threshold = settings.forget_after_sleep_cycles
+
+        # 1. Update cycle counters and check for stage transitions (SUPERSEDED -> ARCHIVED -> FORGOTTEN)
+        remaining_nodes = []
         for node in snapshot.nodes:
+            metadata = node.metadata or {}
+            fact = metadata.get("fact")
+            status = metadata.get("status", "RAW")
+            
+            if fact:
+                if status == "SUPERSEDED":
+                    cycles = metadata.get("sleep_cycles_in_status", 0) + 1
+                    metadata["sleep_cycles_in_status"] = cycles
+                    node.explain_log.append(f"Lifecycle check: Node is in SUPERSEDED status for {cycles} sleep cycles.")
+                    
+                    if cycles >= archive_threshold:
+                        metadata["status"] = "ARCHIVED"
+                        metadata["sleep_cycles_in_status"] = 0
+                        if "fact" in metadata:
+                            metadata["fact"]["status"] = "ARCHIVED"
+                        node.explain_log.append(f"Lifecycle transition: Transitioned from SUPERSEDED to ARCHIVED (reached threshold {archive_threshold} cycles).")
+                        timeline_events.append(f"Archived obsolete memory: '{node.content}'")
+                        
+                elif status == "ARCHIVED":
+                    cycles = metadata.get("sleep_cycles_in_status", 0) + 1
+                    metadata["sleep_cycles_in_status"] = cycles
+                    node.explain_log.append(f"Lifecycle check: Node is in ARCHIVED status for {cycles} sleep cycles.")
+                    
+                    if cycles >= forget_threshold:
+                        metadata["status"] = "FORGOTTEN"
+                        forgotten_ids.append(node.id)
+                        node.explain_log.append(f"Lifecycle transition: Flagged as FORGOTTEN (reached threshold {forget_threshold} cycles).")
+                        timeline_events.append(f"Previous obsolete identities removed from Cognee via forget(): '{node.content}'")
+                        continue  # Skip adding this node to remaining_nodes (it is forgotten/deleted)
+            
+            remaining_nodes.append(node)
+
+        # 2. Gather all nodes with active/consolidated/raw facts for conflict checks
+        active_nodes: List[MemoryNode] = []
+        for node in remaining_nodes:
             metadata = node.metadata or {}
             fact = metadata.get("fact")
             status = metadata.get("status", "RAW")
@@ -96,9 +138,14 @@ class FactResolver:
                 active_nodes.append(node)
                 
         if not active_nodes:
-            return snapshot, timeline_events
+            # Build snapshot excluding forgotten nodes
+            clean_edges = [
+                e for e in snapshot.edges 
+                if e.source not in forgotten_ids and e.target not in forgotten_ids
+            ]
+            return MemoryGraphSnapshot(nodes=remaining_nodes, edges=clean_edges), timeline_events, forgotten_ids
 
-        # 2. Group by subject & predicate
+        # 3. Group by subject & predicate
         groups: Dict[Tuple[str, str], List[MemoryNode]] = {}
         for node in active_nodes:
             fact = node.metadata["fact"]
@@ -112,16 +159,16 @@ class FactResolver:
             key = (sub, pred)
             groups.setdefault(key, []).append(node)
 
-        nodes_to_update: Dict[str, MemoryNode] = {n.id: n for n in snapshot.nodes}
         new_edges: List[MemoryEdge] = []
 
-        # 3. Detect and resolve conflicts / promote raw facts
+        # 4. Detect and resolve conflicts / promote raw facts
         for (sub, pred), group_nodes in groups.items():
             if len(group_nodes) < 2:
                 # Promote single RAW facts to ACTIVE if no contradiction is found
                 single_node = group_nodes[0]
                 if single_node.metadata.get("status") == "RAW":
                     single_node.metadata["status"] = "ACTIVE"
+                    single_node.metadata["sleep_cycles_in_status"] = 0
                     if "fact" in single_node.metadata:
                         single_node.metadata["fact"]["status"] = "ACTIVE"
                     single_node.explain_log.append("Fact resolver: Promoted raw fact to active status.")
@@ -150,14 +197,16 @@ class FactResolver:
             # Keep winner's status or promote
             old_status = winner.metadata.get("status", "RAW")
             winner.metadata["status"] = "CONSOLIDATED" if old_status == "CONSOLIDATED" else "ACTIVE"
+            winner.metadata["sleep_cycles_in_status"] = 0
             if "fact" in winner.metadata:
                 winner.metadata["fact"]["status"] = winner.metadata["status"]
             winner.explain_log.append("Fact resolver: Confirmed as active winner.")
             
-            # Transition immediate loser to SUPERSEDED and older ones to ARCHIVED
+            # Transition immediate predecessor to SUPERSEDED and older ones to ARCHIVED
             if len(sorted_nodes) > 1:
                 immediate_loser = sorted_nodes[1]
                 immediate_loser.metadata["status"] = "SUPERSEDED"
+                immediate_loser.metadata["sleep_cycles_in_status"] = 0
                 if "fact" in immediate_loser.metadata:
                     immediate_loser.metadata["fact"]["status"] = "SUPERSEDED"
                 
@@ -183,12 +232,17 @@ class FactResolver:
 
                 for older_loser in sorted_nodes[2:]:
                     older_loser.metadata["status"] = "ARCHIVED"
+                    older_loser.metadata["sleep_cycles_in_status"] = 0
                     if "fact" in older_loser.metadata:
                         older_loser.metadata["fact"]["status"] = "ARCHIVED"
                     older_loser.explain_log.append("Fact resolver: Archived as historical knowledge.")
 
-        # Build clean snapshot adding the new SUPERSEDED_BY relationships
-        clean_edges = list(snapshot.edges) + new_edges
-        updated_snapshot = MemoryGraphSnapshot(nodes=snapshot.nodes, edges=clean_edges)
+        # Build clean snapshot adding the new SUPERSEDED_BY relationships and excluding forgotten nodes
+        clean_edges = [
+            e for e in snapshot.edges 
+            if e.source not in forgotten_ids and e.target not in forgotten_ids
+        ] + new_edges
         
-        return updated_snapshot, timeline_events
+        updated_snapshot = MemoryGraphSnapshot(nodes=remaining_nodes, edges=clean_edges)
+        
+        return updated_snapshot, timeline_events, forgotten_ids

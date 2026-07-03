@@ -23,6 +23,8 @@ export interface DreamState {
   isSending: boolean;
   deleteNode: (nodeId: string) => Promise<void>;
   deleteAllMemories: () => Promise<void>;
+  showHistory: boolean;
+  setShowHistory: (val: boolean) => void;
 }
 
 export function useDreamState(): DreamState {
@@ -45,6 +47,7 @@ export function useDreamState(): DreamState {
   });
   const [selectedItem, setSelectedItem] = useState<{ type: string; data: unknown } | null>(null);
   const [isSending, setIsSending] = useState<boolean>(false);
+  const [showHistory, setShowHistory] = useState<boolean>(false);
   const eventSourceRef = useRef<EventSource | null>(null);
 
   useEffect(() => {
@@ -98,7 +101,7 @@ export function useDreamState(): DreamState {
       const [reportRes, metricsRes, graphRes, snapshotsRes] = await Promise.all([
         fetch(`${API}/dream-report`),
         fetch(`${API}/metrics`),
-        fetch(`${API}/graph`),
+        fetch(`${API}/graph?show_history=${showHistory}`),
         fetch(`${API}/graph/snapshots`),
       ]);
 
@@ -133,7 +136,7 @@ export function useDreamState(): DreamState {
     } catch (err) {
       console.error('Failed to fetch results:', err);
     }
-  }, []);
+  }, [showHistory]);
 
   const fetchMemories = useCallback(async () => {
     try {
@@ -291,5 +294,7 @@ export function useDreamState(): DreamState {
     isSending,
     deleteNode,
     deleteAllMemories,
+    showHistory,
+    setShowHistory,
   };
 }

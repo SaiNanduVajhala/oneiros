@@ -257,3 +257,29 @@
   from { opacity: 0; transform: translateY(5px); }
   to   { opacity: 1; transform: translateY(0); }
 }
+
+/* ── Show History Toggle ── */
+.graph-viewport__history-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: 12px;
+  font-family: var(--font-mono, monospace);
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-muted);
+  cursor: pointer;
+  user-select: none;
+}
+.graph-viewport__history-toggle input {
+  cursor: pointer;
+  accent-color: var(--accent-primary, #7c6af7);
+  margin: 0;
+}
+.graph-viewport__history-toggle span {
+  transition: color 0.15s;
+}
+.graph-viewport__history-toggle:hover span {
+  color: var(--text-default);
+}
+

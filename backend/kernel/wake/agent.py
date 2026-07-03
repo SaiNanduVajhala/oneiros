@@ -47,6 +47,11 @@ class WakeAgent:
         fact_resolver = FactResolver(self.reasoning_engine)
         
         # Pre-fetch active structured facts to see if we can resolve the query deterministically
+        is_history = any(kw in user_message.lower() for kw in ["history", "previous", "correction", "belief", "changed", "why did", "explain why", "before", "remember before", "changelog"])
+        allowed_statuses = ("ACTIVE", "CONSOLIDATED")
+        if is_history:
+            allowed_statuses = ("ACTIVE", "CONSOLIDATED", "SUPERSEDED", "ARCHIVED")
+            
         active_facts = []
         try:
             nodes_raw, _ = await self.provider.get_graph_data()
@@ -54,11 +59,12 @@ class WakeAgent:
                 meta = props.get("metadata") or {}
                 fact = meta.get("fact")
                 status = meta.get("status", "RAW")
-                # Filter out superseded and archived facts
-                if fact and status in ("ACTIVE", "CONSOLIDATED"):
+                # Filter out superseded and archived facts unless history is requested
+                if fact and status in allowed_statuses:
                     active_facts.append(fact)
         except Exception as e:
             logger.warning(f"Failed to query active structured facts index: {e}")
+
 
         # Check if query targets personal facts and we have matches
         PERSONAL_FACT_KEYWORDS = [

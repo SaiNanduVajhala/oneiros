@@ -327,9 +327,19 @@ class SleepCoordinator:
             try:
                 from kernel.reasoning.fact_resolver import FactResolver
                 fact_resolver = FactResolver(self.reasoning_engine)
-                snapshot, fact_events = fact_resolver.resolve_conflicts(snapshot)
+                snapshot, fact_events, forgotten_ids = fact_resolver.resolve_conflicts(snapshot)
+                
+                # Delete forgotten nodes from Cognee Cloud and database
+                for fid in forgotten_ids:
+                    try:
+                        await self.provider.forget(fid)
+                        logger.info(f"Factual memory lifecycle: node {fid} has been permanently forgotten.")
+                    except Exception as forget_err:
+                        logger.error(f"Failed to delete forgotten node {fid}: {forget_err}")
+
                 fact_duration = (time.perf_counter() - t0_fact) * 1000
                 stages_completed.append("Fact_Resolution")
+
 
                 for evt in fact_events:
                     self._emit(VisEvent(

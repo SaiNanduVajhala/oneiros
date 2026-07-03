@@ -122,17 +122,23 @@ def reset_dream_coordinator():
 
 
 @router.get("/graph")
-async def get_graph(provider: MemoryProvider = Depends(get_memory_provider)):
+async def get_graph(show_history: bool = False, provider: MemoryProvider = Depends(get_memory_provider)):
     """Returns the current graph state from the latest coordinator, or falls back to database."""
     global _current_coordinator, _sleep_status
     if _sleep_status == "dreaming" and _current_coordinator and _current_coordinator.stage_snapshots:
         latest = _current_coordinator.stage_snapshots[-1]
+        nodes = latest.nodes_json
+        edges = latest.edges_json
+        if not show_history:
+            nodes = [n for n in nodes if (n.get("metadata") or {}).get("status") not in ("SUPERSEDED", "ARCHIVED")]
+            node_ids = {n["id"] for n in nodes}
+            edges = [e for e in edges if e["source"] in node_ids and e["target"] in node_ids and e.get("type") != "SUPERSEDED_BY"]
         return {
             "stage": latest.stage,
-            "nodes": latest.nodes_json,
-            "edges": latest.edges_json,
-            "node_count": latest.node_count,
-            "edge_count": latest.edge_count
+            "nodes": nodes,
+            "edges": edges,
+            "node_count": len(nodes),
+            "edge_count": len(edges)
         }
     try:
         nodes_raw, edges_raw = await provider.get_graph_data(consolidated_only=False)
@@ -143,7 +149,8 @@ async def get_graph(provider: MemoryProvider = Depends(get_memory_provider)):
                 "importance": float(props.get("importance", 0.5)),
                 "access_count": int(props.get("access_count", 1)),
                 "source": props.get("source", "user"),
-                "semantic_tags": props.get("semantic_tags", [])
+                "semantic_tags": props.get("semantic_tags", []),
+                "metadata": props.get("metadata", {})
             } for nid, props in nodes_raw
         ]
         edges_json = [
@@ -154,6 +161,12 @@ async def get_graph(provider: MemoryProvider = Depends(get_memory_provider)):
                 "weight": float(props.get("weight", 1.0))
             } for src, tgt, rel, props in edges_raw
         ]
+        
+        if not show_history:
+            nodes_json = [n for n in nodes_json if (n.get("metadata") or {}).get("status") not in ("SUPERSEDED", "ARCHIVED")]
+            node_ids = {n["id"] for n in nodes_json}
+            edges_json = [e for e in edges_json if e["source"] in node_ids and e["target"] in node_ids and e["type"] != "SUPERSEDED_BY"]
+            
         return {
             "stage": "complete" if len(nodes_json) > 0 else "none",
             "nodes": nodes_json,
@@ -163,6 +176,7 @@ async def get_graph(provider: MemoryProvider = Depends(get_memory_provider)):
         }
     except Exception as e:
         logger.error(f"Fallback graph loading failed: {e}")
+
         return {"stage": "none", "nodes": [], "edges": [], "node_count": 0, "edge_count": 0}
 
 

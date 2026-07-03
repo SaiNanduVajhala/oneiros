@@ -111,14 +111,17 @@ class CogneeCloudProvider(MemoryProvider):
         """
         Queries Cognee Cloud for semantic/episodic retrieval, filtering out superseded or archived memories.
         """
+        is_history = any(kw in query.lower() for kw in ["history", "previous", "correction", "belief", "changed", "why did", "explain why", "before", "remember before", "changelog"])
         superseded_contents = set()
-        try:
-            with sqlite3.connect(self.db_path) as conn:
-                cursor = conn.cursor()
-                cursor.execute("SELECT content FROM nodes WHERE metadata LIKE '%\"status\": \"SUPERSEDED\"%' OR metadata LIKE '%\"status\": \"ARCHIVED\"%'")
-                superseded_contents = {row[0].strip().lower() for row in cursor.fetchall()}
-        except Exception as db_err:
-            logger.warning(f"Failed to fetch superseded contents: {db_err}")
+        if not is_history:
+            try:
+                with sqlite3.connect(self.db_path) as conn:
+                    cursor = conn.cursor()
+                    cursor.execute("SELECT content FROM nodes WHERE metadata LIKE '%\"status\": \"SUPERSEDED\"%' OR metadata LIKE '%\"status\": \"ARCHIVED\"%'")
+                    superseded_contents = {row[0].strip().lower() for row in cursor.fetchall()}
+            except Exception as db_err:
+                logger.warning(f"Failed to fetch superseded contents: {db_err}")
+
 
         try:
             results = await self.client.recall(query, dataset_name="oneiros_cloud")

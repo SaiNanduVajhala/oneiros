@@ -10,6 +10,8 @@ interface GraphViewportProps {
   onNodeClick: (node: MemoryNode) => void;
   onDeleteNode?: (nodeId: string) => void;
   onDeleteAll?: () => void;
+  showHistory?: boolean;
+  setShowHistory?: (val: boolean) => void;
 }
 
 // Stable hash-based position — internal only, never shown
@@ -556,7 +558,16 @@ function GraphViewport3D({ nodes, edges, events, onNodeClick, onDeleteNode }: Gr
 // ─────────────────────────────────────────────
 //  MAIN EXPORT
 // ─────────────────────────────────────────────
-export function GraphViewport({ nodes, edges, events, onNodeClick, onDeleteNode, onDeleteAll }: GraphViewportProps) {
+export function GraphViewport({
+  nodes,
+  edges,
+  events,
+  onNodeClick,
+  onDeleteNode,
+  onDeleteAll,
+  showHistory = false,
+  setShowHistory
+}: GraphViewportProps) {
   const [is3D, setIs3D] = useState(true);
   const [confirmClearAll, setConfirmClearAll] = useState(false);
 
@@ -577,6 +588,18 @@ export function GraphViewport({ nodes, edges, events, onNodeClick, onDeleteNode,
           <span className="graph-viewport__toggle-sep">|</span>
           <span className={`graph-viewport__toggle-opt ${is3D ? 'active' : ''}`}>3D</span>
         </button>
+
+        {/* Show History Toggle */}
+        {setShowHistory && (
+          <label className="graph-viewport__history-toggle" title="Show superseded and archived factual memory history">
+            <input
+              type="checkbox"
+              checked={showHistory}
+              onChange={(e) => setShowHistory(e.target.checked)}
+            />
+            <span>Show History</span>
+          </label>
+        )}
 
         {/* Clear All */}
         {onDeleteAll && nodes.length > 0 && (

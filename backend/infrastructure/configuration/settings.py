@@ -23,6 +23,9 @@ class Settings:
         self.cognee_api_key = os.environ.get("COGNEE_API_KEY")
         self.cognee_endpoint = os.environ.get("COGNEE_BASE_URL", os.environ.get("COGNEE_ENDPOINT", "https://api.cognee.ai/v1"))
         self.database_path = os.environ.get("DATABASE_PATH", os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data", "local_brain.db"))
+        self.archive_after_sleep_cycles = int(os.environ.get("ARCHIVE_AFTER_SLEEP_CYCLES", 1))
+        self.forget_after_sleep_cycles = int(os.environ.get("FORGET_AFTER_SLEEP_CYCLES", 2))
+
 
 # Instantiate settings singleton
 settings = Settings()
