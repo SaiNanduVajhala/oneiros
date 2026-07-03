@@ -62,7 +62,6 @@ The agent interacts with the user, showing live memory node additions in the 3D 
 ### 🌙 Cognitive Consolidation (Dreaming State)
 The dashboard shifts into a dreaming console, visually replaying, clustering, pruning, and synthesizing concepts.
 ![Dreaming State](docs/images/Oneiros__Dreaming_Live_screenshot.png)
-![Stage Playback](docs/images/Oneiros__Dreaming_N2_Consolidation_screenshot.png)
 
 ### 🛠️ Developer & Diagnostic Console (Engineering Panel)
 Accessible via `#/debug`, this view exposes real-time telemetry, sandbox controls, live SSE event buffers, database resets, and self-testing suites.
