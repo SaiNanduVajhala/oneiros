@@ -55,10 +55,22 @@ export function AgentConsole({
     msg.content.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const filteredNodes = storedMemories.filter(node =>
-    node.content.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    (node.semantic_tags && node.semantic_tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase())))
-  );
+  // Exclude Cognee-internal nodes: text chunks, datasets, user records
+  const isInternalNode = (node: MemoryNode) =>
+    /^text_[a-f0-9]{10,}$/i.test(node.id) ||
+    /^user:[a-f0-9]+$/i.test(node.id) ||
+    (node.semantic_tags && node.semantic_tags.some(t =>
+      ['textdocument', 'dataset', 'user'].includes(t)
+    )) ||
+    /^oneiros_/i.test(node.content || '') ||
+    /^user:[a-f0-9]+$/i.test(node.content || '');
+
+  const filteredNodes = storedMemories
+    .filter(node => !isInternalNode(node))
+    .filter(node =>
+      node.content.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (node.semantic_tags && node.semantic_tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase())))
+    );
 
   return (
     <div className="panel agent-console">

@@ -95,7 +95,7 @@ class SleepCoordinator:
         except RuntimeError:
             pass  # No running loop during tests
 
-    async def execute_cycle(self, input_snapshot: Optional[MemoryGraphSnapshot] = None) -> DreamReport:
+    async def execute_cycle(self, input_snapshot: Optional[MemoryGraphSnapshot] = None, force: bool = False) -> DreamReport:
         if self._lock.locked():
             logger.warning("Sleep cycle execution blocked: coordinator is already running a cycle.")
             raise RuntimeError("A sleep cycle is already in progress.")
@@ -114,17 +114,6 @@ class SleepCoordinator:
 
             self.provider.set_sleep_state(True)
 
-            timeline.append(f"{_ts()} — Dream cycle started")
-            self._emit(VisEvent(
-                stage="system", type="cycle_start",
-                message="Dream cycle initiated"
-            ))
-
-            await event_bus.publish(Event(
-                event_type="DreamStarted",
-                payload={"dream_id": dream_id, "started_at": started_at.isoformat()}
-            ))
-
             # 1. Resolve starting snapshot
             snapshot = input_snapshot
             if snapshot is None:
@@ -137,7 +126,8 @@ class SleepCoordinator:
                             importance=float(props.get("importance", 0.5)),
                             access_count=int(props.get("access_count", 1)),
                             source=props.get("source", "user"),
-                            semantic_tags=props.get("semantic_tags", [])
+                            semantic_tags=props.get("semantic_tags", []),
+                            metadata=props.get("metadata", {})
                         ) for nid, props in nodes_raw
                     ]
                     edges = [
@@ -150,6 +140,71 @@ class SleepCoordinator:
                 except NotImplementedError:
                     logger.warning("Provider stubbed. Running on empty snapshot.")
                     snapshot = MemoryGraphSnapshot(nodes=[], edges=[])
+
+            # ── Cognitive gate: skip if nothing meaningful to consolidate ──
+            import re as _re
+
+            def _is_internal(n: MemoryNode) -> bool:
+                """Matches the same filter used on the frontend to exclude Cognee infrastructure nodes."""
+                tags = n.semantic_tags or []
+                return (
+                    bool(_re.match(r'^text_[a-f0-9]{10,}$', n.id, _re.I)) or
+                    bool(_re.match(r'^user:[a-f0-9]+$', n.id, _re.I)) or
+                    any(t in ('textdocument', 'dataset', 'user') for t in tags) or
+                    bool(_re.match(r'^oneiros_', n.content or '', _re.I)) or
+                    bool(_re.match(r'^user:[a-f0-9]+$', (n.content or '').strip(), _re.I))
+                )
+
+            MIN_MEMORIES = 3
+            real_nodes = [n for n in snapshot.nodes if not _is_internal(n)]
+            episodic_nodes = [n for n in real_nodes if n.source in ("user", "agent")]
+            skip_reason: Optional[str] = None
+
+            if not force:
+                if len(real_nodes) == 0:
+                    skip_reason = "No memories available for consolidation."
+                elif len(episodic_nodes) < MIN_MEMORIES:
+                    skip_reason = (
+                        f"Only {len(episodic_nodes)} episodic memor{'y' if len(episodic_nodes) == 1 else 'ies'} found. "
+                        f"Minimum threshold: {MIN_MEMORIES}."
+                    )
+
+            if skip_reason:
+                self.provider.set_sleep_state(False)
+                logger.info(f"Dream cycle skipped: {skip_reason}")
+                self._emit(VisEvent(
+                    stage="system", type="cycle_complete",
+                    message=f"Sleep skipped — {skip_reason}",
+                    health_before=0.0, health_after=0.0
+                ))
+                return DreamReport(
+                    dream_id=dream_id,
+                    started_at=started_at,
+                    finished_at=datetime.now(),
+                    duration=0.0,
+                    stages_completed=[],
+                    nodes_processed=len(snapshot.nodes),
+                    nodes_removed=0,
+                    concepts_created=0,
+                    relationships_created=0,
+                    compression_ratio=1.0,
+                    memory_health_before=0.0,
+                    memory_health_after=0.0,
+                    summary_narrative=f"🛌 Sleep skipped\n\nReason:\n• {skip_reason}\n\nNo replay or consolidation was necessary.",
+                    timeline=[f"{_ts()} — Skipped: {skip_reason}"]
+                )
+            # ── End gate ──
+
+            timeline.append(f"{_ts()} — Dream cycle started")
+            self._emit(VisEvent(
+                stage="system", type="cycle_start",
+                message="Dream cycle initiated"
+            ))
+
+            await event_bus.publish(Event(
+                event_type="DreamStarted",
+                payload={"dream_id": dream_id, "started_at": started_at.isoformat()}
+            ))
 
             initial_node_count = len(snapshot.nodes)
             initial_edge_count = len(snapshot.edges)
@@ -261,6 +316,38 @@ class SleepCoordinator:
             except Exception as e:
                 logger.error(f"N2 Consolidation failed: {e}")
                 timeline.append(f"{_ts()} — Consolidation stage failed: {e}")
+
+            # --- Fact Resolution ---
+            t0_fact = time.perf_counter()
+            timeline.append(f"{_ts()} — Fact Resolution stage started")
+            self._emit(VisEvent(
+                stage="Fact_Resolution", type="stage_start",
+                message="Fact Resolution stage started — checking for structured fact updates"
+            ))
+            try:
+                from kernel.reasoning.fact_resolver import FactResolver
+                fact_resolver = FactResolver(self.reasoning_engine)
+                snapshot, fact_events = fact_resolver.resolve_conflicts(snapshot)
+                fact_duration = (time.perf_counter() - t0_fact) * 1000
+                stages_completed.append("Fact_Resolution")
+
+                for evt in fact_events:
+                    self._emit(VisEvent(
+                        stage="Fact_Resolution", type="conflict_resolve",
+                        message=evt,
+                        algorithm="structured_fact_resolution"
+                    ))
+
+                self._emit(VisEvent(
+                    stage="Fact_Resolution", type="stage_complete",
+                    message=f"Fact resolution complete: resolved {len(fact_events)} conflicts in {fact_duration:.0f}ms",
+                    duration_ms=round(fact_duration, 1)
+                ))
+                timeline.extend([f"{_ts()} — {evt}" for evt in fact_events])
+                self.stage_snapshots.append(_snapshot_graph("Fact_Resolution", snapshot, vis_events=self.vis_events, health=health_before, algorithm_traces=self.algorithm_traces))
+            except Exception as e:
+                logger.error(f"Fact Resolution stage failed: {e}")
+                timeline.append(f"{_ts()} — Fact Resolution stage failed: {e}")
 
             # --- N3: Pruning ---
             t0 = time.perf_counter()

@@ -18,6 +18,7 @@
 | **July 1** | **Day 3: Cloud Migration, 3D Graph & Clean Audit** | <ul><li>✅ Migrated memory layer to **Cognee Cloud** via `CogneeClient` and `CogneeCloudProvider`</li><li>✅ Implemented **asynchronous write lock & queue** synchronization during sleep stages</li><li>✅ Built **WebGL Synaptic Shader Background** and **Three.js 3D Graph Viewport**</li><li>✅ Performed complete backend audit, deleting 12 dead files & securing concurrency via `asyncio.Lock()`</li></ul> |
 | **July 2** | **Day 4: Developer Console & Page Layout Optimization** | <ul><li>✅ Developed collapsible Developer Drawer console (`DevDrawer.tsx`) to query status, config, and run individual stages</li><li>✅ Added debug router endpoints (`/api/debug/status`, `/api/debug/config`, `/api/debug/stage`, `/api/debug/reset`)</li><li>✅ Optimized dashboard grid layouts and panel heights to enable viewport-constrained scrolling</li></ul> |
 | **July 3** | **Day 5: Direct Memories Feed & Core Site Completion** | <ul><li>✅ Built backend Memories feed database endpoint (`GET /api/chat/memories`) querying nodes table directly</li><li>✅ Refactored Memories tab in `AgentConsole.tsx` to list ingested raw memories immediately</li><li>✅ Completed core features, databases, and api integrations</li></ul> |
+| **July 3** | **Day 5 (cont.): Graph UX, Memory Management & Cognitive Gate** | <ul><li>✅ Added **2D/3D graph toggle** — force-directed 2D canvas view alongside the 3D Three.js view</li><li>✅ Fixed **tooltip sticky bug** — tooltip clears immediately on mouse-leave in both 2D and 3D views</li><li>✅ Removed node labels from 2D canvas — decluttered, only hover tooltip shows content</li><li>✅ Added **per-node delete** — hover tooltip shows 🗑 Delete button with confirmation</li><li>✅ Added **Clear All memories** — header button with full-panel overlay confirmation</li><li>✅ Added `DELETE /api/chat/memories/{id}` and `DELETE /api/chat/memories` endpoints</li><li>✅ Filtered Cognee internal nodes (`text_<hash>`, `#textdocument`, `#dataset`, `user:<hash>`, `oneiros_*`) from graph, memories list, and DevDrawer — only real user memories shown</li><li>✅ Fixed memories endpoint to **fall back to Cognee Cloud** when SQLite mirror is empty (e.g. after reset)</li><li>✅ Implemented **Cognitive Dream Gate** — sleep cycle skips automatically when there are fewer than 3 real episodic memories, returning a meaningful skip report instead of running an empty cycle</li><li>✅ Fixed DevDrawer Provenance Explorer to display real user memories (fetching from `/api/chat/memories`) instead of raw Cognee graph data</li></ul> |
 | **July 4** | **Day 6: Interface Polish & Demo Video** | <ul><li>🟡 Polishing glassmorphism layouts, typography, micro-interactions, and visual shaders</li><li>🟡 Making the walkthrough demo video</li></ul> |
 | **July 5** | **Day 7: Explanation & Launch** | <ul><li>🟡 Preparing technical explanation documentation, codebase logs, and final review</li></ul> |
 
@@ -46,6 +47,8 @@ Oneiros brings the human sleep-wake cycle directly to artificial intelligence. I
     *   **Prune**: Merges duplicate events and resolves logical contradictions.
     *   **REM**: Synthesizes parent abstract concepts and links related topics.
 3.  **☀️ Wake Again**: The agent wakes up with a clean, optimized, and hierarchically organized knowledge graph.
+
+> **Cognitive Gate**: If there are fewer than 3 episodic memories at sleep trigger time, the cycle is skipped automatically and a clear reason is returned. The agent will not dream when there is nothing to consolidate.
 
 ---
 
@@ -86,11 +89,15 @@ graph TD
     WakeAgent -->|remember| Provider["Memory Provider"]
 
     User -->|Trigger Sleep| SleepCoordinator["Sleep Coordinator"]
-    SleepCoordinator -->|Lock Provider| Provider
+    SleepCoordinator -->|Gate Check| Gate{"≥ 3 memories?"}
+    Gate -->|No| Skip["Return Skip Report"]
+    Gate -->|Yes| Lock["Lock Provider"]
+    Lock --> Provider
 
     subgraph Sleep_Pipeline
         Replay["N1 Replay"] --> Consolidation["N2 Consolidation"]
-        Consolidation --> Pruning["N3 Pruning"]
+        Consolidation --> FactRes["Fact Resolution"]
+        FactRes --> Pruning["N3 Pruning"]
         Pruning --> REM["REM Synthesis"]
     end
 
@@ -112,11 +119,13 @@ graph TD
 During sleep mode, memories flow sequentially through four biological stages to consolidate and prune the graph:
 
 ```
-[ Ingested Raw Memories ] ➔ [ N1: Replay Decay ] ➔ [ N2: DBSCAN Grouping ] ➔ [ N3: Duplicate Merge ] ➔ [ REM: Concept Synthesis ] ➔ [ Rested Graph ]
+[ Ingested Raw Memories ] ➔ [ Gate Check ] ➔ [ N1: Replay Decay ] ➔ [ N2: DBSCAN Grouping ] ➔ [ Fact Resolution ] ➔ [ N3: Duplicate Merge ] ➔ [ REM: Concept Synthesis ] ➔ [ Rested Graph ]
 ```
 
+*   **Gate Check**: Verifies ≥ 3 real episodic memories exist before running. Skips gracefully if not.
 *   **N1 Replay**: Ranks memories using a time-decayed activation score, filtering the most relevant nodes.
 *   **N2 Consolidation**: Groups semantically related experiences in coordinate spaces using DBSCAN and cosine distance.
+*   **Fact Resolution**: Resolves structured fact conflicts (e.g. name updates) before pruning.
 *   **N3 Pruning**: Merges duplicates and resolves conflicting logic statements using LLM checks.
 *   **REM Abstraction**: Synthesizes parent topic Concepts and links them with latent associations.
 
@@ -127,11 +136,14 @@ During sleep mode, memories flow sequentially through four biological stages to 
 ## ⚡ Key Features
 
 *   **🧠 Cognitive Sleep Cycle**: Algorithmic pipeline replaying, clustering, merging, and abstracting memories.
-*   **🔮 3D Synaptic Space**: High-fidelity Three.js viewport showing episodic spheres, concept hexagons, and coordinate morph animations.
+*   **🛌 Cognitive Dream Gate**: Sleep is automatically skipped when there are no meaningful memories to consolidate — mirroring biological sleep behavior.
+*   **🔮 2D / 3D Dual Graph View**: Toggle between a force-directed 2D canvas view and the 3D Three.js synaptic space. Nodes are circles (episodic) and hexagons (sleep concepts).
+*   **🗑️ Memory Management**: Delete individual memories via hover tooltip or wipe all memories with Clear All — both update the graph live.
 *   **🔒 Concurrency-Safe Sync**: Write-locking queue that caches incoming user writes during sleep execution to avoid database corruptions.
 *   **🛡️ Concurrency Guard**: Coroutine-safe `asyncio.Lock()` preventing simultaneous sleep cycle executions.
-*   **☁️ Cognee Cloud Ready**: Full abstraction integration mapping local operations directly to Cognee Cloud.
+*   **☁️ Cognee Cloud Ready**: Full abstraction integration mapping local operations directly to Cognee Cloud. SQLite acts as a local mirror with automatic fallback to Cloud when the mirror is empty.
 *   **📈 Telemetry Explainability**: Timeline events, metrics summaries, and detailed stage execution traces.
+*   **🔬 Developer Console**: Isolated stage controls, provenance explorer showing real memories, live SSE event log.
 
 ---
 
@@ -152,15 +164,15 @@ Oneiros implements formal mathematical models to drive memory operations:
 *   **Memory Substrate**: Cognee SDK (LanceDB vector store + SQLite relational graph)
 *   **Reasoning Engine**: Google Gemini API via custom ReasoningEngine
 *   **Frontend Interface**: Vite + React 19 + TypeScript
-*   **WebGL Rendering**: Three.js + Custom GLSL fragment shader
-*   **Synchronization**: Asynchronous Lock & SQLite caching
+*   **WebGL Rendering**: Three.js + Custom GLSL fragment shader + Canvas 2D (2D graph mode)
+*   **Synchronization**: Asynchronous Lock & SQLite caching with Cloud fallback
 
 ---
 
 ## 📂 Project Structure
 
 *   [backend/](file:///c:/Users/nagendra%20prasad/Downloads/oneiros/backend) — FastAPI server, API endpoints, algorithms, and provider implementations.
-*   [frontend/](file:///c:/Users/nagendra%20prasad/Downloads/oneiros/frontend) — Vite React dashboard interface, WebGL shaders, and Three.js viewports.
+*   [frontend/](file:///c:/Users/nagendra%20prasad/Downloads/oneiros/frontend) — Vite React dashboard interface, WebGL shaders, Three.js and Canvas 2D viewports.
 *   [docs/](file:///c:/Users/nagendra%20prasad/Downloads/oneiros/docs) — Research logs, development timeline tracking, and repository architecture specifications.
 
 *For a detailed file-by-file roadmap, see the [Folder Structure Log](docs/folder_structure.md).*
@@ -189,6 +201,26 @@ COGNEE_API_KEY=your_cognee_api_key
     npm install
     npm run dev
     ```
+
+---
+
+## 📡 API Reference
+
+| Method | Endpoint | Description |
+| :--- | :--- | :--- |
+| `POST` | `/api/chat` | Send a message; stored as episodic memory |
+| `GET` | `/api/chat/memories` | List all real user memories (internal nodes filtered) |
+| `DELETE` | `/api/chat/memories/{id}` | Delete a single memory node by ID |
+| `DELETE` | `/api/chat/memories` | Wipe all memories |
+| `POST` | `/api/sleep/start` | Trigger a sleep consolidation cycle (gated) |
+| `GET` | `/api/sleep/status` | Current sleep state (`idle` / `dreaming` / `complete`) |
+| `GET` | `/api/sleep/events` | SSE stream of real-time VisEvents |
+| `GET` | `/api/graph` | Current graph nodes and edges |
+| `GET` | `/api/graph/snapshots` | Stage-by-stage graph snapshots for temporal playback |
+| `GET` | `/api/dream-report` | Latest DreamReport (or skip report) |
+| `GET` | `/api/metrics` | Latest algorithm metrics snapshot |
+| `POST` | `/api/debug/reset` | Wipe all Cognee Cloud data and SQLite mirror |
+| `POST` | `/api/debug/stage` | Run an isolated pipeline stage (Developer Mode, bypasses gate) |
 
 ---
 

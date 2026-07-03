@@ -61,15 +61,17 @@ class PruningStage:
             node.metadata["calculated_activation"] = activation
             
             # Prune user episodic memories that drop below threshold
-            if not is_concept and activation < retention_threshold:
+            is_superseded_or_archived = node.metadata.get("status") in ("SUPERSEDED", "ARCHIVED")
+            if not is_concept and not is_superseded_or_archived and activation < retention_threshold:
                 nodes_to_delete.add(node.id)
                 explain = f"Flagged for pruning: Activation score ({activation:.3f}) fell below threshold ({retention_threshold})"
                 node.explain_log.append(explain)
                 timeline_events.append(f"Pruned low-activation memory: '{node.content[:30]}...' (Score: {activation:.3f})")
 
         # --- 2. Two-Stage Duplicate Detection ---
-        # Get candidates with similarity >= 0.90
-        candidates = detect_duplicate_candidates(snapshot.nodes, threshold=0.90)
+        # Filter out superseded and archived nodes from active processing checks
+        active_nodes_for_checks = [n for n in snapshot.nodes if n.metadata.get("status", "RAW") not in ("SUPERSEDED", "ARCHIVED")]
+        candidates = detect_duplicate_candidates(active_nodes_for_checks, threshold=0.90)
         
         for node_a, node_b, score in candidates:
             # Skip if either is already marked for deletion
@@ -114,9 +116,9 @@ class PruningStage:
                             timeline_events.append(f"Merged duplicate: '{obsolete.content[:25]}...' -> '{preferred.content[:25]}...' ({reason[:40]})")
                 except Exception as e:
                     logger.error(f"Error executing LLM duplicate check: {e}")
-
+ 
         # --- 3. Contradiction Resolution ---
-        contradiction_pairs = find_potential_contradiction_pairs(snapshot.nodes)
+        contradiction_pairs = find_potential_contradiction_pairs(active_nodes_for_checks)
         for node_a, node_b in contradiction_pairs:
             if node_a.id in nodes_to_delete or node_b.id in nodes_to_delete:
                 continue

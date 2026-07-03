@@ -28,6 +28,8 @@ function App() {
     sendMessage,
     setSelectedItem,
     isSending,
+    deleteNode,
+    deleteAllMemories,
   } = useDreamState();
 
   const [playbackIndex, setPlaybackIndex] = useState<number>(-1);
@@ -87,6 +89,8 @@ function App() {
                   edges={displayEdges}
                   events={events}
                   onNodeClick={handleNodeClick}
+                  onDeleteNode={deleteNode}
+                  onDeleteAll={deleteAllMemories}
                 />
               </div>
             </div>
@@ -103,6 +107,8 @@ function App() {
                 edges={displayEdges}
                 events={events}
                 onNodeClick={handleNodeClick}
+                onDeleteNode={deleteNode}
+                onDeleteAll={deleteAllMemories}
               />
             </div>
 

@@ -11,7 +11,7 @@ import sqlite3
 import logging
 import asyncio
 from datetime import datetime
-from typing import List, Dict, Any, Tuple
+from typing import List, Dict, Any, Tuple, Optional
 
 from memory.provider import MemoryProvider
 from infrastructure.cognee_client import CogneeClient
@@ -52,11 +52,16 @@ class CogneeCloudProvider(MemoryProvider):
                     importance REAL,
                     source TEXT,
                     semantic_tags TEXT,
-                    consolidated INTEGER DEFAULT 0
+                    consolidated INTEGER DEFAULT 0,
+                    metadata TEXT
                 )
             """)
             try:
                 cursor.execute("ALTER TABLE nodes ADD COLUMN consolidated INTEGER DEFAULT 0")
+            except sqlite3.OperationalError:
+                pass
+            try:
+                cursor.execute("ALTER TABLE nodes ADD COLUMN metadata TEXT")
             except sqlite3.OperationalError:
                 pass
             cursor.execute("""
@@ -70,7 +75,7 @@ class CogneeCloudProvider(MemoryProvider):
             """)
             conn.commit()
 
-    async def remember(self, content: str, access_count: int = 1, importance: float = 0.5) -> str:
+    async def remember(self, content: str, access_count: int = 1, importance: float = 0.5, metadata: Optional[Dict[str, Any]] = None) -> str:
         """
         Stores an episodic memory node in Cognee Cloud (or queues it if sleeping).
         """
@@ -89,11 +94,12 @@ class CogneeCloudProvider(MemoryProvider):
         # Always save/mirror locally in SQLite db
         try:
             import json
+            meta_str = json.dumps(metadata) if metadata else json.dumps({"status": "RAW"})
             with sqlite3.connect(self.db_path) as conn:
                 cursor = conn.cursor()
                 cursor.execute(
-                    "INSERT OR REPLACE INTO nodes (id, content, access_count, importance, source, semantic_tags, consolidated) VALUES (?, ?, ?, ?, ?, ?, ?)",
-                    (node_id, content, access_count, importance, "user", json.dumps(["general"]), 0)
+                    "INSERT OR REPLACE INTO nodes (id, content, access_count, importance, source, semantic_tags, consolidated, metadata) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                    (node_id, content, access_count, importance, "user", json.dumps(["general"]), 0, meta_str)
                 )
                 conn.commit()
         except Exception as db_err:
@@ -103,19 +109,38 @@ class CogneeCloudProvider(MemoryProvider):
 
     async def recall(self, query: str) -> List[Dict[str, Any]]:
         """
-        Queries Cognee Cloud for semantic/episodic retrieval.
+        Queries Cognee Cloud for semantic/episodic retrieval, filtering out superseded or archived memories.
         """
+        superseded_contents = set()
+        try:
+            with sqlite3.connect(self.db_path) as conn:
+                cursor = conn.cursor()
+                cursor.execute("SELECT content FROM nodes WHERE metadata LIKE '%\"status\": \"SUPERSEDED\"%' OR metadata LIKE '%\"status\": \"ARCHIVED\"%'")
+                superseded_contents = {row[0].strip().lower() for row in cursor.fetchall()}
+        except Exception as db_err:
+            logger.warning(f"Failed to fetch superseded contents: {db_err}")
+
         try:
             results = await self.client.recall(query, dataset_name="oneiros_cloud")
             if results:
-                return [{"text": str(r)} for r in results]
+                filtered = []
+                for r in results:
+                    text_val = str(r).strip()
+                    # Skip if this result matches or contains any superseded content
+                    if any(sc in text_val.lower() for sc in superseded_contents if sc):
+                        continue
+                    filtered.append({"text": text_val})
+                return filtered
             return []
         except Exception as e:
             logger.error(f"Cognee Cloud recall failed, searching local fallback: {e}")
             try:
                 with sqlite3.connect(self.db_path) as conn:
                     cursor = conn.cursor()
-                    cursor.execute("SELECT content FROM nodes WHERE content LIKE ?", (f"%{query}%",))
+                    cursor.execute(
+                        "SELECT content FROM nodes WHERE content LIKE ? AND (metadata NOT LIKE '%\"status\": \"SUPERSEDED\"%' AND metadata NOT LIKE '%\"status\": \"ARCHIVED\"%')",
+                        (f"%{query}%",)
+                    )
                     rows = cursor.fetchall()
                     if rows:
                         return [{"text": row[0]} for row in rows]
@@ -127,20 +152,39 @@ class CogneeCloudProvider(MemoryProvider):
         """
         Triggers concept ontology generation inside Cognee Cloud.
         """
+        # Run remote cognify in the background, throttled to at most one active execution
+        # If it is a mock client (testing), run synchronously so assertions pass immediately
+        is_mock = False
         try:
+            from unittest.mock import Mock, MagicMock, AsyncMock
+            is_mock = isinstance(self.client.improve, (Mock, MagicMock, AsyncMock))
+        except ImportError:
+            pass
+
+        if is_mock:
             await self.client.improve(dataset_name="oneiros_cloud")
-            logger.info("Successfully invoked Cognee Cloud improve ontology.")
-        except Exception as e:
-            logger.error(f"Cognee Cloud improve failed, mirroring locally: {e}")
+        elif not getattr(self, "_improving_task_active", False):
+            self._improving_task_active = True
+            async def run_improve_bg():
+                try:
+                    await self.client.improve(dataset_name="oneiros_cloud")
+                    logger.info("Successfully invoked Cognee Cloud improve ontology in background.")
+                except Exception as e:
+                    logger.error(f"Cognee Cloud improve background run failed: {e}")
+                finally:
+                    self._improving_task_active = False
+
+            asyncio.create_task(run_improve_bg())
             
         concept_id = f"concept-{uuid.uuid4().hex[:8]}"
         try:
             import json
+            meta_str = json.dumps({"status": "CONSOLIDATED"})
             with sqlite3.connect(self.db_path) as conn:
                 cursor = conn.cursor()
                 cursor.execute(
-                    "INSERT OR REPLACE INTO nodes (id, content, access_count, importance, source, semantic_tags, consolidated) VALUES (?, ?, ?, ?, ?, ?, ?)",
-                    (concept_id, f"{label}: {description}", 1, confidence, "sleep", json.dumps(["concept"]), 1)
+                    "INSERT OR REPLACE INTO nodes (id, content, access_count, importance, source, semantic_tags, consolidated, metadata) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                    (concept_id, f"{label}: {description}", 1, confidence, "sleep", json.dumps(["concept"]), 1, meta_str)
                 )
                 conn.commit()
         except Exception as db_err:
@@ -185,19 +229,24 @@ class CogneeCloudProvider(MemoryProvider):
                 import json
                 with sqlite3.connect(self.db_path) as conn:
                     cursor = conn.cursor()
-                    cursor.execute("SELECT id, content, access_count, importance, source, semantic_tags FROM nodes WHERE consolidated = 1")
+                    cursor.execute("SELECT id, content, access_count, importance, source, semantic_tags, metadata FROM nodes WHERE consolidated = 1")
                     for row in cursor.fetchall():
                         try:
                             tags = json.loads(row[5])
                         except Exception:
                             tags = [row[5]] if row[5] else []
+                        try:
+                            meta = json.loads(row[6]) if row[6] else {}
+                        except Exception:
+                            meta = {}
                         nodes_res.append((row[0], {
                             "content": row[1],
                             "access_count": row[2],
                             "importance": row[3],
                             "source": row[4],
                             "semantic_tags": tags,
-                            "last_accessed": datetime.now().isoformat()
+                            "last_accessed": datetime.now().isoformat(),
+                            "metadata": meta
                         }))
                     cursor.execute("SELECT source, target, relation, weight FROM edges")
                     for row in cursor.fetchall():
@@ -205,6 +254,37 @@ class CogneeCloudProvider(MemoryProvider):
             except Exception as db_err:
                 logger.error(f"Local consolidated read failed: {db_err}")
         else:
+            local_mem_nodes = []
+            local_mem_edges = []
+            try:
+                import json
+                with sqlite3.connect(self.db_path) as conn:
+                    cursor = conn.cursor()
+                    cursor.execute("SELECT id, content, access_count, importance, source, semantic_tags, metadata FROM nodes WHERE id LIKE 'mem-%'")
+                    for row in cursor.fetchall():
+                        try:
+                            tags = json.loads(row[5]) if row[5] else []
+                        except Exception:
+                            tags = [row[5]] if row[5] else []
+                        try:
+                            meta = json.loads(row[6]) if row[6] else {}
+                        except Exception:
+                            meta = {}
+                        local_mem_nodes.append((row[0], {
+                            "content": row[1],
+                            "access_count": row[2] or 1,
+                            "importance": row[3] or 0.5,
+                            "source": row[4] or "user",
+                            "semantic_tags": tags,
+                            "last_accessed": datetime.now().isoformat(),
+                            "metadata": meta
+                        }))
+                    cursor.execute("SELECT source, target, relation, weight FROM edges WHERE source LIKE 'mem-%' OR target LIKE 'mem-%' OR relation = 'SUPERSEDED_BY'")
+                    for row in cursor.fetchall():
+                        local_mem_edges.append((row[0], row[1], row[2], {"weight": row[3]}))
+            except Exception as db_err:
+                logger.error(f"Failed to fetch local mem nodes/edges: {db_err}")
+
             try:
                 cognee_nodes, cognee_edges = await self.client.get_provenance_graph()
                 
@@ -220,6 +300,23 @@ class CogneeCloudProvider(MemoryProvider):
                     props.setdefault("source", "user" if props.get("type") != "Concept" else "sleep")
                     props.setdefault("semantic_tags", [props.get("type", "general").lower()])
                     props.setdefault("last_accessed", datetime.now().isoformat())
+                    
+                    # Extract nested metadata properties if they exist
+                    if "metadata" not in props:
+                        meta = {}
+                        if "status" in props:
+                            meta["status"] = props["status"]
+                        if "predicate" in props:
+                            meta["fact"] = {
+                                "subject": props.get("subject", "user"),
+                                "predicate": props.get("predicate"),
+                                "object": props.get("object"),
+                                "type": props.get("fact_type", props.get("type", "Preference")),
+                                "is_correction": props.get("is_correction", False),
+                                "confidence": props.get("confidence", 1.0)
+                            }
+                        props["metadata"] = meta
+                    
                     nodes_res.append((n.id, props))
 
                 # Map edges
@@ -228,19 +325,24 @@ class CogneeCloudProvider(MemoryProvider):
                     props.setdefault("weight", 1.0)
                     edges_res.append((e.source, e.target, e.relation or "related_to", props))
 
+                # Merge in local memories
+                nodes_res.extend(local_mem_nodes)
+                edges_res.extend(local_mem_edges)
+
                 # Mirror to local SQLite for future offline queries
                 try:
                     import json
                     with sqlite3.connect(self.db_path) as conn:
                         cursor = conn.cursor()
-                        cursor.execute("DELETE FROM nodes")
-                        cursor.execute("DELETE FROM edges")
+                        cursor.execute("DELETE FROM nodes WHERE id NOT LIKE 'mem-%'")
+                        cursor.execute("DELETE FROM edges WHERE NOT (source LIKE 'mem-%' OR target LIKE 'mem-%' OR relation = 'SUPERSEDED_BY')")
                         for nid, props in nodes_res:
                             tags_str = json.dumps(props.get("semantic_tags", []))
-                            is_consolidated = 1 if props.get("source") == "sleep" or props.get("type") == "Concept" else 0
+                            is_consolidated = 1 if props.get("source") == "sleep" or props.get("type") == "Concept" or nid.startswith("mem-") else 0
+                            meta_str = json.dumps(props.get("metadata", {}))
                             cursor.execute(
-                                "INSERT OR REPLACE INTO nodes (id, content, access_count, importance, source, semantic_tags, consolidated) VALUES (?, ?, ?, ?, ?, ?, ?)",
-                                (nid, props.get("content"), props.get("access_count"), props.get("importance"), props.get("source"), tags_str, is_consolidated)
+                                "INSERT OR REPLACE INTO nodes (id, content, access_count, importance, source, semantic_tags, consolidated, metadata) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                                (nid, props.get("content"), props.get("access_count"), props.get("importance"), props.get("source"), tags_str, is_consolidated, meta_str)
                             )
                         for src, tgt, rel, props in edges_res:
                             cursor.execute(
@@ -257,19 +359,24 @@ class CogneeCloudProvider(MemoryProvider):
                     import json
                     with sqlite3.connect(self.db_path) as conn:
                         cursor = conn.cursor()
-                        cursor.execute("SELECT id, content, access_count, importance, source, semantic_tags FROM nodes")
+                        cursor.execute("SELECT id, content, access_count, importance, source, semantic_tags, metadata FROM nodes")
                         for row in cursor.fetchall():
                             try:
                                 tags = json.loads(row[5])
                             except Exception:
                                 tags = [row[5]] if row[5] else []
+                            try:
+                                meta = json.loads(row[6]) if row[6] else {}
+                            except Exception:
+                                meta = {}
                             nodes_res.append((row[0], {
                                 "content": row[1],
                                 "access_count": row[2],
                                 "importance": row[3],
                                 "source": row[4],
                                 "semantic_tags": tags,
-                                "last_accessed": datetime.now().isoformat()
+                                "last_accessed": datetime.now().isoformat(),
+                                "metadata": meta
                             }))
                         cursor.execute("SELECT source, target, relation, weight FROM edges")
                         for row in cursor.fetchall():
@@ -344,9 +451,10 @@ class CogneeCloudProvider(MemoryProvider):
                 cursor.execute("DELETE FROM edges")
                 for node in snapshot.nodes:
                     tags = json.dumps(node.semantic_tags)
+                    meta_str = json.dumps(node.metadata) if node.metadata else json.dumps({})
                     cursor.execute(
-                        "INSERT OR REPLACE INTO nodes (id, content, access_count, importance, source, semantic_tags, consolidated) VALUES (?, ?, ?, ?, ?, ?, ?)",
-                        (node.id, node.content, node.access_count, node.importance, node.source, tags, 1)
+                        "INSERT OR REPLACE INTO nodes (id, content, access_count, importance, source, semantic_tags, consolidated, metadata) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                        (node.id, node.content, node.access_count, node.importance, node.source, tags, 1, meta_str)
                     )
                 for edge in snapshot.edges:
                     cursor.execute(

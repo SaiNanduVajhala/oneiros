@@ -86,11 +86,12 @@ export function DevDrawer({ isOpen, onClose }: DevDrawerProps) {
 
   const fetchProvenance = async () => {
     try {
-      const res = await fetch(`${API}/debug/provenance`);
+      const res = await fetch(`${API}/chat/memories`);
       const data = await res.json();
-      setProvenance(data);
+      // Build ProvenanceData shape from memories response
+      setProvenance({ nodes: data.nodes || [], edges: [] });
     } catch (err) {
-      console.error('Failed to fetch provenance graph:', err);
+      console.error('Failed to fetch memories for provenance:', err);
     }
   };
 
@@ -365,21 +366,23 @@ export function DevDrawer({ isOpen, onClose }: DevDrawerProps) {
                   <table className="dev-table">
                     <thead>
                       <tr>
-                        <th>ID</th>
                         <th>Content</th>
                         <th>Source</th>
-                        <th>Importance</th>
+                        <th>Tags</th>
+                        <th>Imp</th>
                       </tr>
                     </thead>
                     <tbody>
                       {provenance.nodes.map((node) => (
                         <tr key={node.id}>
-                          <td className="font-mono text-gold text-xs">{node.id}</td>
                           <td className="node-content-cell">{node.content}</td>
                           <td>
                             <span className={`node-source-badge badge--${node.source}`}>
                               {node.source}
                             </span>
+                          </td>
+                          <td className="text-xs" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
+                            {node.semantic_tags?.join(', ') || '—'}
                           </td>
                           <td className="font-mono text-center">{node.importance.toFixed(2)}</td>
                         </tr>
@@ -387,7 +390,7 @@ export function DevDrawer({ isOpen, onClose }: DevDrawerProps) {
                     </tbody>
                   </table>
                 ) : (
-                  <p className="dev-placeholder">No provenance data. Seeding required.</p>
+                  <p className="dev-placeholder">No memories stored yet. Say something to Oneiros.</p>
                 )}
               </div>
             ) : (

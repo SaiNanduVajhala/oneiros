@@ -40,8 +40,10 @@ def compute_memory_health(
     Derives a memory health score between 0.0 and 100.0.
     
     Deducts points for duplicates, contradictions, and orphan nodes.
+    Only ACTIVE, CONSOLIDATED, and RAW nodes participate.
     """
-    if not nodes:
+    active_nodes = [n for n in nodes if n.metadata.get("status", "RAW") not in ("SUPERSEDED", "ARCHIVED")]
+    if not active_nodes:
         return 100.0
 
     score = 100.0
@@ -53,7 +55,10 @@ def compute_memory_health(
     score -= (duplicate_count * 5.0)
 
     # 3. Deduct for orphan nodes (degree 0)
-    centrality_map = compute_graph_centrality(nodes, edges)
+    active_ids = {n.id for n in active_nodes}
+    active_edges = [e for e in edges if e.source in active_ids and e.target in active_ids]
+    
+    centrality_map = compute_graph_centrality(active_nodes, active_edges)
     orphans = sum(1 for nid, c in centrality_map.items() if c == 0.0)
     score -= (orphans * 2.0)
 

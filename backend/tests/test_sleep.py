@@ -180,7 +180,7 @@ async def test_dataset_a_consolidation():
     report = await coordinator.execute_cycle(snapshot)
     
     assert report.nodes_processed == 20
-    assert len(report.stages_completed) == 4
+    assert len(report.stages_completed) == 5
     assert report.memory_health_after >= report.memory_health_before
     assert len(report.timeline) > 0
 

@@ -21,6 +21,8 @@ export interface DreamState {
   sendMessage: (msg: string) => Promise<void>;
   setSelectedItem: (item: { type: string; data: unknown } | null) => void;
   isSending: boolean;
+  deleteNode: (nodeId: string) => Promise<void>;
+  deleteAllMemories: () => Promise<void>;
 }
 
 export function useDreamState(): DreamState {
@@ -108,8 +110,22 @@ export function useDreamState(): DreamState {
 
       const graphData = await graphRes.json();
       if (graphData.nodes) {
-        setGraphNodes(graphData.nodes);
-        setGraphEdges(graphData.edges);
+        const isInternalGraphNode = (n: any) =>
+          /^text_[a-f0-9]{10,}$/i.test(n.id) ||
+          /^user:[a-f0-9]+$/i.test(n.id) ||
+          (Array.isArray(n.semantic_tags) && n.semantic_tags.some((t: string) =>
+            ['textdocument', 'dataset', 'user'].includes(t)
+          )) ||
+          /^oneiros_/i.test(n.content || '') ||
+          /^user:[a-f0-9]+$/i.test(n.content || '');
+
+        const cleanNodes = graphData.nodes.filter((n: any) => !isInternalGraphNode(n));
+        const cleanNodeIds = new Set(cleanNodes.map((n: any) => n.id));
+        const cleanEdges = (graphData.edges || []).filter((e: any) =>
+          cleanNodeIds.has(e.source) && cleanNodeIds.has(e.target)
+        );
+        setGraphNodes(cleanNodes);
+        setGraphEdges(cleanEdges);
       }
 
       const snapshotsData = await snapshotsRes.json();
@@ -124,13 +140,28 @@ export function useDreamState(): DreamState {
       const res = await fetch(`http://localhost:8000/api/chat/memories`);
       const data = await res.json();
       if (data.nodes) {
-        setStoredMemories(data.nodes.map((n: any) => ({
-          ...n,
-          timestamp: n.timestamp || new Date().toISOString(),
-          last_accessed: n.last_accessed || new Date().toISOString(),
-          metadata: n.metadata || {},
-          explain_log: n.explain_log || [],
-        })));
+        const isInternal = (n: any) =>
+          /^text_[a-f0-9]{10,}$/i.test(n.id) ||              // cognee text chunks
+          /^user:[a-f0-9]+$/i.test(n.id) ||                  // cognee user nodes
+          (Array.isArray(n.semantic_tags) && (
+            n.semantic_tags.includes('textdocument') ||
+            n.semantic_tags.includes('dataset') ||
+            n.semantic_tags.includes('user')
+          )) ||
+          /^oneiros_/i.test(n.content || '') ||              // cognee dataset names
+          /^user:[a-f0-9]+$/i.test(n.content || '');        // user:<hash> content
+
+        setStoredMemories(
+          data.nodes
+            .filter((n: any) => !isInternal(n))
+            .map((n: any) => ({
+              ...n,
+              timestamp: n.timestamp || new Date().toISOString(),
+              last_accessed: n.last_accessed || new Date().toISOString(),
+              metadata: n.metadata || {},
+              explain_log: n.explain_log || [],
+            }))
+        );
       }
     } catch (err) {
       console.error('Failed to fetch memories:', err);
@@ -219,6 +250,27 @@ export function useDreamState(): DreamState {
     setStatus('idle');
   }, []);
 
+  const deleteNode = useCallback(async (nodeId: string) => {
+    try {
+      await fetch(`${API}/chat/memories/${encodeURIComponent(nodeId)}`, { method: 'DELETE' });
+      await fetchMemories();
+      await fetchResults();
+    } catch (err) {
+      console.error('Failed to delete node:', err);
+    }
+  }, [fetchMemories, fetchResults]);
+
+  const deleteAllMemories = useCallback(async () => {
+    try {
+      await fetch(`${API}/chat/memories`, { method: 'DELETE' });
+      setGraphNodes([]);
+      setGraphEdges([]);
+      setStoredMemories([]);
+    } catch (err) {
+      console.error('Failed to clear memories:', err);
+    }
+  }, []);
+
   return {
     status,
     events,
@@ -237,5 +289,7 @@ export function useDreamState(): DreamState {
     sendMessage,
     setSelectedItem,
     isSending,
+    deleteNode,
+    deleteAllMemories,
   };
 }

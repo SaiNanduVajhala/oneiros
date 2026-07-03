@@ -57,7 +57,7 @@ class CogneeClient:
 
     async def improve(self, dataset_name: str) -> None:
         await self.connect()
-        await cognee.improve(dataset=dataset_name)
+        await cognee.cognify(datasets=[dataset_name])
 
     async def forget(self, data_id: Any, dataset_name: str) -> None:
         await self.connect()

@@ -62,23 +62,15 @@ async def start_sleep(provider: MemoryProvider = Depends(get_memory_provider)):
     _sleep_status = "dreaming"
     _last_report = None
 
-    # Resolve snapshot from the currently loaded coordinator if available
     snapshot = None
-    if _current_coordinator and _current_coordinator.stage_snapshots:
-        latest = _current_coordinator.stage_snapshots[-1]
-        from domain.memory import MemoryGraphSnapshot, MemoryNode, MemoryEdge
-        nodes = [MemoryNode(**n) for n in latest.nodes_json]
-        edges = [MemoryEdge(**e) for e in latest.edges_json]
-        snapshot = MemoryGraphSnapshot(nodes=nodes, edges=edges)
-
     coordinator = SleepCoordinator(provider)
     _current_coordinator = coordinator
 
     try:
-        report = await coordinator.execute_cycle(snapshot)
+        report = await coordinator.execute_cycle(snapshot, force=False)
         _last_report = report.model_dump()
         _sleep_status = "complete"
-        return {"status": "complete", "dream_id": report.dream_id}
+        return {"status": report.model_dump().get("stages_completed") and "complete" or "skipped", "dream_id": report.dream_id}
     except Exception as e:
         _sleep_status = "idle"
         provider.set_sleep_state(False)

@@ -8,7 +8,7 @@ Cognitive Operating System kernel interacts only with this abstract interface.
 
 from abc import ABC, abstractmethod
 import logging
-from typing import List, Dict, Any, Tuple
+from typing import List, Dict, Any, Tuple, Optional
 
 class MemoryProvider(ABC):
     """
@@ -47,7 +47,7 @@ class MemoryProvider(ABC):
 
 
     @abstractmethod
-    async def remember(self, content: str, access_count: int = 1, importance: float = 0.5) -> str:
+    async def remember(self, content: str, access_count: int = 1, importance: float = 0.5, metadata: Optional[Dict[str, Any]] = None) -> str:
         """
         Stores a raw episodic memory statement on the persistent brain substrate.
 
@@ -55,6 +55,7 @@ class MemoryProvider(ABC):
             content: The text description of the experience.
             access_count: Initial activation count.
             importance: User-specified initial significance weight (0.0 to 1.0).
+            metadata: Optional metadata properties to attach to the node.
 
         Returns:
             str: The unique identifier of the stored episodic memory node.
