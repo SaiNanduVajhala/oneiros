@@ -55,6 +55,8 @@ Oneiros brings the human sleep-wake cycle directly to artificial intelligence. I
 
 Oneiros features a high-fidelity dark glassmorphism dashboard built with a real-time WebGL fragment shader background and a Three.js 3D force-directed network viewport.
 
+![Oneiros Interactive Demo](docs/images/Oneiros__Demo_Video.webp)
+
 ### ☀️ Active Ingestion (Awake State)
 The agent interacts with the user, showing live memory node additions in the 3D synaptic space.
 ![Awake State](docs/images/Oneiros__Awake_State_screenshot.png)
