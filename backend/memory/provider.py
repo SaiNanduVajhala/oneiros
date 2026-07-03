@@ -104,7 +104,7 @@ class MemoryProvider(ABC):
         pass
 
     @abstractmethod
-    async def get_graph_data(self) -> Tuple[List[Tuple[str, Dict[str, Any]]], List[Tuple[str, str, str, Dict[str, Any]]]]:
+    async def get_graph_data(self, consolidated_only: bool = False) -> Tuple[List[Tuple[str, Dict[str, Any]]], List[Tuple[str, str, str, Dict[str, Any]]]]:
         """
         Extracts all nodes and edges from the graph database formatted for dashboard visualization.
 

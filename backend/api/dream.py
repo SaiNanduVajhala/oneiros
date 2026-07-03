@@ -123,8 +123,9 @@ async def sleep_events_sse():
 
 
 @router.get("/graph")
-async def get_graph():
-    """Returns the current graph state from the latest coordinator."""
+async def get_graph(provider: MemoryProvider = Depends(get_memory_provider)):
+    """Returns the current graph state from the latest coordinator, or falls back to database."""
+    global _current_coordinator
     if _current_coordinator and _current_coordinator.stage_snapshots:
         latest = _current_coordinator.stage_snapshots[-1]
         return {
@@ -134,7 +135,36 @@ async def get_graph():
             "node_count": latest.node_count,
             "edge_count": latest.edge_count
         }
-    return {"stage": "none", "nodes": [], "edges": [], "node_count": 0, "edge_count": 0}
+    try:
+        nodes_raw, edges_raw = await provider.get_graph_data(consolidated_only=True)
+        nodes_json = [
+            {
+                "id": nid,
+                "content": props.get("content") or props.get("description") or nid,
+                "importance": float(props.get("importance", 0.5)),
+                "access_count": int(props.get("access_count", 1)),
+                "source": props.get("source", "user"),
+                "semantic_tags": props.get("semantic_tags", [])
+            } for nid, props in nodes_raw
+        ]
+        edges_json = [
+            {
+                "source": src,
+                "target": tgt,
+                "type": rel,
+                "weight": float(props.get("weight", 1.0))
+            } for src, tgt, rel, props in edges_raw
+        ]
+        return {
+            "stage": "complete" if len(nodes_json) > 0 else "none",
+            "nodes": nodes_json,
+            "edges": edges_json,
+            "node_count": len(nodes_json),
+            "edge_count": len(edges_json)
+        }
+    except Exception as e:
+        logger.error(f"Fallback graph loading failed: {e}")
+        return {"stage": "none", "nodes": [], "edges": [], "node_count": 0, "edge_count": 0}
 
 
 @router.get("/graph/snapshots")

@@ -23,7 +23,7 @@ from memory.cognee_cloud_provider import CogneeCloudProvider
 class StubCloudProvider(CogneeCloudProvider):
     def __init__(self):
         pass
-    async def get_graph_data(self):
+    async def get_graph_data(self, consolidated_only: bool = False):
         return [], []
 
 StubCloudProvider.__name__ = "CogneeCloudProvider"
