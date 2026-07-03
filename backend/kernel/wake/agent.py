@@ -110,7 +110,7 @@ class WakeAgent:
                 }
                 
             try:
-                memory_id = await self.provider.remember(user_message, metadata=metadata_to_save)
+                memory_id = await self.provider.remember(user_message, importance=candidate.confidence, metadata=metadata_to_save)
                 await event_bus.publish(Event(
                     event_type="MemoryRemembered",
                     payload={"node_id": memory_id, "content": user_message}
