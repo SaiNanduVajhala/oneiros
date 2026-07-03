@@ -35,47 +35,7 @@ class FactResolver:
     Cognitive resolver identifying and transitioning conflicting facts during sleep.
     """
     def __init__(self, reasoning_engine: Optional[ReasoningEngine] = None):
-        self.reasoning_engine = reasoning_engine or ReasoningEngine()
-
-    async def extract_structured_fact(self, content: str) -> Optional[Dict[str, Any]]:
-        """
-        Extracts a typed fact dictionary from content using the LLM.
-        """
-        system_instruction = (
-            "You are an AI fact-extraction engine. Analyze the statement and extract any personal "
-            "facts regarding the user (identity, preferences, location, occupation, relationship, "
-            "skills, goals, biography, schedules).\n"
-            "Output a JSON object with keys:\n"
-            "- 'subject': string representing who the fact is about. For facts about the user/speaker themselves, this MUST strictly be 'user'.\n"
-            "- 'predicate': string representing the property (e.g. 'name', 'favorite_color', 'residence')\n"
-            "- 'object': string value\n"
-            "- 'type': string category (must be one of: Identity, Preference, Location, Occupation, Relationship, Skill, Goal, Biography, Schedule)\n"
-            "- 'is_correction': boolean (set true if user explicitly corrects/changes a prior fact)\n"
-            "- 'confidence': float (0.0 to 1.0)\n\n"
-            "If no structured personal facts can be extracted from the text, return an empty object {}."
-        )
-        
-        try:
-            res = await self.reasoning_engine.generate_structured_response(system_instruction, content)
-            if not res or "predicate" not in res:
-                return None
-                
-            # Validate type
-            fact_type = res.get("type", "Preference")
-            if fact_type not in FACT_CATEGORIES:
-                fact_type = "Preference"
-            res["type"] = fact_type
-            res.setdefault("status", "RAW")
-            
-            # Normalize subject to user
-            sub = str(res.get("subject", "user")).lower()
-            if sub in ("user", "me", "i", "self"):
-                res["subject"] = "user"
-                
-            return res
-        except Exception as e:
-            logger.error(f"Structured fact extraction failed: {e}")
-            return None
+        self.reasoning_engine = reasoning_engine
 
     def resolve_conflicts(self, snapshot: MemoryGraphSnapshot) -> Tuple[MemoryGraphSnapshot, List[str], List[str]]:
         """

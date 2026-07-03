@@ -46,6 +46,13 @@ async def test_wake_agent_working_memory_integration():
     
     mock_reasoning_engine = MagicMock(spec=ReasoningEngine)
     mock_reasoning_engine.reason_wake = AsyncMock(return_value="Mocked response")
+    mock_reasoning_engine.generate_structured_response = AsyncMock(return_value={
+        "category": "FACT",
+        "subject": "user",
+        "predicate": "opinion",
+        "object": "Chemex coffee is good",
+        "confidence": 0.95
+    })
     
     # Set up WakeAgent
     agent = WakeAgent(provider=mock_provider, reasoning_engine=mock_reasoning_engine)

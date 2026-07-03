@@ -48,3 +48,16 @@ class MemoryGraphSnapshot(BaseModel):
     """
     nodes: List[MemoryNode] = Field(default_factory=list)
     edges: List[MemoryEdge] = Field(default_factory=list)
+
+
+class MemoryCandidate(BaseModel):
+    """
+    Typed model representing extracted memory candidates from user input.
+    """
+    category: str  # "CHAT", "FACT", "FACT_UPDATE", "PREFERENCE", "TASK", "DELETE_REQUEST"
+    subject: Optional[str] = None
+    predicate: Optional[str] = None
+    object: Optional[str] = None
+    confidence: float = 1.0
+    source_message: str
+

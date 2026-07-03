@@ -40,8 +40,40 @@ function renderNodeExplain(node: MemoryNode) {
               {node.importance < 0.25 ? 'Evicted / Pruned' : 'Retained in Graph'}
             </td>
           </tr>
+          {node.metadata?.category && (
+            <tr style={{ borderBottom: '1px solid var(--border-subtle)' }}>
+              <td style={{ padding: '8px 0', color: 'var(--text-tertiary)' }}>Memory Category</td>
+              <td style={{ padding: '8px 0', textAlign: 'right', fontWeight: 600 }}>{node.metadata.category}</td>
+            </tr>
+          )}
+          {typeof node.metadata?.confidence === 'number' && (
+            <tr style={{ borderBottom: '1px solid var(--border-subtle)' }}>
+              <td style={{ padding: '8px 0', color: 'var(--text-tertiary)' }}>Extraction Confidence</td>
+              <td style={{ padding: '8px 0', textAlign: 'right', fontWeight: 600 }}>{(node.metadata.confidence * 100).toFixed(0)}%</td>
+            </tr>
+          )}
+          {node.metadata?.status && (
+            <tr style={{ borderBottom: '1px solid var(--border-subtle)' }}>
+              <td style={{ padding: '8px 0', color: 'var(--text-tertiary)' }}>Lifecycle State</td>
+              <td style={{ padding: '8px 0', textAlign: 'right', fontWeight: 600, color: 'var(--accent-primary)' }}>{node.metadata.status}</td>
+            </tr>
+          )}
+          {node.metadata?.timestamp && (
+            <tr style={{ borderBottom: '1px solid var(--border-subtle)' }}>
+              <td style={{ padding: '8px 0', color: 'var(--text-tertiary)' }}>Stored Timestamp</td>
+              <td style={{ padding: '8px 0', textAlign: 'right', fontWeight: 600, fontSize: '11px' }}>{new Date(node.metadata.timestamp).toLocaleString()}</td>
+            </tr>
+          )}
         </tbody>
       </table>
+
+      {node.metadata?.source_message && (
+        <div style={{ marginTop: 'var(--space-md)', fontSize: 'var(--text-sm)', background: 'var(--bg-elevated, #1e1e2a)', padding: 'var(--space-sm, 8px)', borderRadius: 'var(--border-radius, 4px)', border: '1px solid var(--border-subtle, #2e2e3e)' }}>
+          <strong style={{ color: 'var(--text-tertiary)' }}>Source Utterance:</strong>
+          <p style={{ margin: '4px 0 0 0', fontStyle: 'italic' }}>"{node.metadata.source_message}"</p>
+        </div>
+      )}
+
 
       {node.semantic_tags.length > 0 && (
         <div className="explain-panel__tags" style={{ marginTop: 'var(--space-md)' }}>

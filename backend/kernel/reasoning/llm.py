@@ -19,19 +19,36 @@ class ReasoningEngine:
     def __init__(self, client: Optional[GeminiClient] = None):
         self.client = client or GeminiClient()
 
-    async def reason_wake(self, user_message: str, working_memory_str: str, long_term_memory_str: str) -> str:
+    async def reason_wake(
+        self,
+        user_message: str,
+        working_memory_str: str,
+        user_identity_str: str = "",
+        user_preferences_str: str = "",
+        long_term_facts_str: str = ""
+    ) -> str:
         """
         Coordinates reasoning for the Wake Phase conversation.
+        Supports both old 3-argument signature and new 5-argument structured signature.
         """
+        # If called with old signature: reason_wake(user_msg, wm_str, ltm_str)
+        if user_identity_str and not user_preferences_str and not long_term_facts_str:
+            long_term_facts_str = user_identity_str
+            user_identity_str = "- (No identity facts stored)"
+            user_preferences_str = "- (No preference facts stored)"
+
         user_prompt = USER_WAKE_TEMPLATE.format(
             working_memory_str=working_memory_str,
-            long_term_memory_str=long_term_memory_str,
+            user_identity_str=user_identity_str or "- (No identity facts stored)",
+            user_preferences_str=user_preferences_str or "- (No preference facts stored)",
+            long_term_facts_str=long_term_facts_str or "- (No long-term facts stored)",
             user_message=user_message
         )
         return await self.client.generate_response(
             system_instruction=SYSTEM_WAKE_PROMPT,
             user_prompt=user_prompt
         )
+
 
     async def generate_structured_response(self, system_instruction: str, user_prompt: str) -> Dict[str, Any]:
         """
