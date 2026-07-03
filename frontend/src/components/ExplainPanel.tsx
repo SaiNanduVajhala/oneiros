@@ -37,7 +37,7 @@ function renderNodeExplain(node: MemoryNode) {
           {typeof node.metadata?.retention_score === 'number' && (
             <tr style={{ borderBottom: '1px solid var(--border-subtle)' }}>
               <td style={{ padding: '8px 0', color: 'var(--text-tertiary)' }}>Retention Score</td>
-              <td style={{ padding: '8px 0', textAlign: 'right', fontWeight: 600, color: 'var(--accent-success)' }}>{node.metadata.retention_score.toFixed(3)}</td>
+              <td style={{ padding: '8px 0', textAlign: 'right', fontWeight: 600, color: 'var(--accent-success)' }}>{(node.metadata.retention_score as number).toFixed(3)}</td>
             </tr>
           )}
           <tr style={{ borderBottom: '1px solid var(--border-subtle)' }}>
@@ -47,31 +47,31 @@ function renderNodeExplain(node: MemoryNode) {
           {node.metadata?.category && (
             <tr style={{ borderBottom: '1px solid var(--border-subtle)' }}>
               <td style={{ padding: '8px 0', color: 'var(--text-tertiary)' }}>Memory Category</td>
-              <td style={{ padding: '8px 0', textAlign: 'right', fontWeight: 600 }}>{node.metadata.category}</td>
+              <td style={{ padding: '8px 0', textAlign: 'right', fontWeight: 600 }}>{node.metadata.category as string}</td>
             </tr>
           )}
           {typeof node.metadata?.confidence === 'number' && (
             <tr style={{ borderBottom: '1px solid var(--border-subtle)' }}>
               <td style={{ padding: '8px 0', color: 'var(--text-tertiary)' }}>Extraction Confidence</td>
-              <td style={{ padding: '8px 0', textAlign: 'right', fontWeight: 600 }}>{(node.metadata.confidence * 100).toFixed(0)}%</td>
+              <td style={{ padding: '8px 0', textAlign: 'right', fontWeight: 600 }}>{((node.metadata.confidence as number) * 100).toFixed(0)}%</td>
             </tr>
           )}
           {node.metadata?.status && (
             <tr style={{ borderBottom: '1px solid var(--border-subtle)' }}>
               <td style={{ padding: '8px 0', color: 'var(--text-tertiary)' }}>Lifecycle State</td>
-              <td style={{ padding: '8px 0', textAlign: 'right', fontWeight: 600, color: 'var(--accent-primary)' }}>{node.metadata.status}</td>
+              <td style={{ padding: '8px 0', textAlign: 'right', fontWeight: 600, color: 'var(--accent-primary)' }}>{node.metadata.status as string}</td>
             </tr>
           )}
           {node.metadata?.last_reinforced && (
             <tr style={{ borderBottom: '1px solid var(--border-subtle)' }}>
               <td style={{ padding: '8px 0', color: 'var(--text-tertiary)' }}>Last Reinforced</td>
-              <td style={{ padding: '8px 0', textAlign: 'right', fontWeight: 600, fontSize: '11px' }}>{new Date(node.metadata.last_reinforced).toLocaleString()}</td>
+              <td style={{ padding: '8px 0', textAlign: 'right', fontWeight: 600, fontSize: '11px' }}>{new Date(node.metadata.last_reinforced as string).toLocaleString()}</td>
             </tr>
           )}
           {node.metadata?.timestamp && (
             <tr style={{ borderBottom: '1px solid var(--border-subtle)' }}>
               <td style={{ padding: '8px 0', color: 'var(--text-tertiary)' }}>Stored Timestamp</td>
-              <td style={{ padding: '8px 0', textAlign: 'right', fontWeight: 600, fontSize: '11px' }}>{new Date(node.metadata.timestamp).toLocaleString()}</td>
+              <td style={{ padding: '8px 0', textAlign: 'right', fontWeight: 600, fontSize: '11px' }}>{new Date(node.metadata.timestamp as string).toLocaleString()}</td>
             </tr>
           )}
 
@@ -81,9 +81,10 @@ function renderNodeExplain(node: MemoryNode) {
       {node.metadata?.source_message && (
         <div style={{ marginTop: 'var(--space-md)', fontSize: 'var(--text-sm)', background: 'var(--bg-elevated, #1e1e2a)', padding: 'var(--space-sm, 8px)', borderRadius: 'var(--border-radius, 4px)', border: '1px solid var(--border-subtle, #2e2e3e)' }}>
           <strong style={{ color: 'var(--text-tertiary)' }}>Source Utterance:</strong>
-          <p style={{ margin: '4px 0 0 0', fontStyle: 'italic' }}>"{node.metadata.source_message}"</p>
+          <p style={{ margin: '4px 0 0 0', fontStyle: 'italic' }}>"{node.metadata.source_message as string}"</p>
         </div>
       )}
+
 
 
       {node.semantic_tags.length > 0 && (

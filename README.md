@@ -19,11 +19,11 @@
 | **July 2** | **Day 4: Developer Console & Page Layout Optimization** | <ul><li>✅ Developed collapsible Developer Drawer console (`DevDrawer.tsx`) to query status and run stages</li><li>✅ Added debug router endpoints (`/api/debug/status`, `/api/debug/config`, `/api/debug/stage`, `/api/debug/reset`)</li><li>✅ Optimized dashboard grid layouts and panel heights to enable viewport-constrained scrolling</li></ul> |
 | **July 3** | **Day 5: Graph UX, Deletion, Fallbacks & Cognitive Gate** | <ul><li>✅ Added **2D/3D graph toggle** — force-directed 2D canvas view alongside the 3D Three.js view</li><li>✅ Fixed **tooltip sticky bug** — tooltip clears immediately on mouse-leave in both 2D and 3D views</li><li>✅ Removed node labels from 2D canvas — decluttered, only hover tooltip shows content</li><li>✅ Added **per-node delete** — hover tooltip shows 🗑 Delete button with confirmation</li><li>✅ Added **Clear All memories** — header button with full-panel overlay confirmation</li><li>✅ Filtered Cognee internal nodes (`text_<hash>`, `#textdocument`, `#dataset`, `user:<hash>`, `oneiros_*`) from graphs and lists</li><li>✅ Fixed memories endpoint to **fall back to Cognee Cloud** when SQLite mirror is empty (e.g. after reset)</li><li>✅ Implemented **Cognitive Dream Gate** — sleep cycle skips automatically when there are fewer than 3 real episodic memories, returning a skip report</li></ul> |
 | **July 4** | **Day 6: Full-Page Observatory Dev Console & Cleanups** | <ul><li>✅ Replaced developer drawer with a full-page **Developer Console Page** (at `#/debug`) containing 15 diagnostic sections, testing utilities, self-tests, and real-time backend log streaming</li><li>✅ Redesigned Developer Console styling to use the "Warm Observatory" palette and local Geist fonts</li><li>✅ Added background auto-connection status check triggering Cognee serve connect automatically on startup</li><li>✅ Stripped navigation emojis, replacing them with modern inline vector SVG icons</li><li>✅ Cleaned up workspace folder structure, deleting prompt design reference files, redundant sliding drawer files, and empty ignored folders from Git tracking (`backend/backend`, `backend/scripts`, `backend/data`)</li></ul> |
-| **July 5** | **Day 7: Performance Verification & Launch** | <ul><li>✅ Implemented three-tier memory architecture separating transient Working Memory from Cognee Cloud long-term memory retrieval</li><li>✅ Added comprehensive unit tests for Working Memory and WakeAgent</li><li>✅ Completed final validation and launch review</li></ul> |
+| **July 5** | **Day 7: Performance Verification & Launch** | <ul><li>✅ Implemented three-tier memory architecture separating transient Working Memory from Cognee Cloud long-term memory retrieval</li><li>✅ Added comprehensive unit tests for Working Memory and WakeAgent</li><li>✅ Implemented Cognitive Memory Ingestion Pipeline with `MemoryExtractor` classifying inputs into CHAT, FACT, PREFERENCE, TASK, etc.</li><li>✅ Created `MemoryLifecycleEngine` using dynamic Retention Scores (integrating importance, age decay, access count, and status penalties) to drive state transitions (ACTIVE ➔ INACTIVE ➔ ARCHIVED ➔ FORGOTTEN) instead of fixed cycle timers</li><li>✅ Decoupled AI-estimated dynamic Importance from parser confidence and exposed stats on the frontend Explain Panel</li></ul> |
 
 ---
 
-## 🧠 Three-Tier Memory Architecture
+## 🧠 Three-Tier Memory Architecture & Grounded Retrieval
 
 To enable instant retrieval of recent conversation history and contradictions (like updating preferences) without requiring a sleep cycle first, Oneiros implements a three-tier memory structure:
 
@@ -38,18 +38,25 @@ To enable instant retrieval of recent conversation history and contradictions (l
     *   **Isolated Persistence**: Used strictly for offline visualization layout caching, event logging, and UI sidebar representation.
     *   **Decoupled**: Completely isolated from the conversational retrieval and intelligence loops.
 
-When generating a response during Wake mode, Oneiros constructs a structured prompt combining these tiers:
+When generating a response during Wake mode, Oneiros constructs a structured prompt separating long-term facts by cognitive categories (Identity, Preferences, and general Long-Term Facts) to enforce authoritative user grounding and entity resolution:
 
 ```
-=== RECENT CONVERSATION ===
+=== WORKING MEMORY (RECENT CONVERSATION) ===
 {working_memory_str}
 
-=== LONG-TERM MEMORY ===
-{long_term_memory_str}
+=== USER IDENTITY (AUTHORITATIVE) ===
+{user_identity_str}
+
+=== USER PREFERENCES ===
+{user_preferences_str}
+
+=== LONG-TERM FACTS ===
+{long_term_facts_str}
 
 === USER MESSAGE ===
 {user_message}
 ```
+
 
 
 ---
@@ -121,6 +128,7 @@ Oneiros adheres to a strict clean architecture separating domain schemas, cognit
 ```mermaid
 graph TD
     User["User Client"] -->|Chat Message| WakeAgent["Wake Agent"]
+    WakeAgent -->|classify & extract| MemoryExtractor["Memory Extractor"]
     WakeAgent -->|remember| Provider["Memory Provider"]
 
     User -->|Trigger Sleep| SleepCoordinator["Sleep Coordinator"]
@@ -133,12 +141,14 @@ graph TD
         Replay["N1 Replay"] --> Consolidation["N2 Consolidation"]
         Consolidation --> FactRes["Fact Resolution"]
         FactRes --> Pruning["N3 Pruning"]
-        Pruning --> REM["REM Synthesis"]
+        Pruning --> LifecycleEngine["Memory Lifecycle Engine"]
+        LifecycleEngine --> REM["REM Synthesis"]
     end
 
     SleepCoordinator --> Replay
 
-    Pruning -->|forget| Provider
+    LifecycleEngine -->|forget / delete| Provider
+    LifecycleEngine -->|update status| Provider
     REM -->|improve| Provider
 
     Provider --> CloudProvider["Cognee Cloud Provider"]
@@ -154,17 +164,18 @@ graph TD
 During sleep mode, memories flow sequentially through four biological stages to consolidate and prune the graph:
 
 ```
-[ Ingested Raw Memories ] ➔ [ Gate Check ] ➔ [ N1: Replay Decay ] ➔ [ N2: DBSCAN Grouping ] ➔ [ Fact Resolution ] ➔ [ N3: Duplicate Merge ] ➔ [ REM: Concept Synthesis ] ➔ [ Rested Graph ]
+[ Ingested Raw Memories ] ➔ [ Gate Check ] ➔ [ N1: Replay Decay ] ➔ [ N2: DBSCAN Grouping ] ➔ [ Fact Resolution ] ➔ [ N3: Lifecycle Scoring & Pruning ] ➔ [ REM: Concept Synthesis ] ➔ [ Rested Graph ]
 ```
 
 *   **Gate Check**: Verifies ≥ 3 real episodic memories exist before running. Skips gracefully if not.
 *   **N1 Replay**: Ranks memories using a time-decayed activation score, filtering the most relevant nodes.
 *   **N2 Consolidation**: Groups semantically related experiences in coordinate spaces using DBSCAN and cosine distance.
-*   **Fact Resolution**: Resolves structured fact conflicts (e.g. name updates) before pruning.
-*   **N3 Pruning**: Merges duplicates and resolves conflicting logic statements using LLM checks.
+*   **Fact Resolution**: Identifies and resolves structured fact conflicts (e.g. name corrections), marking the winner `ACTIVE` and predecessor `SUPERSEDED`.
+*   **N3 Lifecycle Scoring & Pruning**: Merges duplicates ($\ge 0.995$), computes dynamic **Retention Scores** for all nodes (exponential age decay, access reinforcement, status penalties), and transitions node lifecycle states (`ACTIVE` ➔ `INACTIVE` ➔ `ARCHIVED` ➔ `FORGOTTEN`). Deletes `FORGOTTEN` nodes permanently.
 *   **REM Abstraction**: Synthesizes parent topic Concepts and links them with latent associations.
 
 *Detailed equations and algorithmic parameters are documented in the [Cognitive Research & Validation Log](docs/cognitive_research_validation.md).*
+
 
 ---
 
