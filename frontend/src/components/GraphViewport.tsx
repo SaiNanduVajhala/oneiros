@@ -47,11 +47,6 @@ function hexToRgb(hex: number): string {
   return `rgb(${(hex >> 16) & 0xff},${(hex >> 8) & 0xff},${hex & 0xff})`;
 }
 
-// Show real content, never hashes
-function nodeLabel(node: MemoryNode): string {
-  const c = node.content?.trim() || '';
-  return c.length > 24 ? c.slice(0, 22) + '…' : c || '(empty)';
-}
 
 // ─────────────────────────────────────────────
 //  2D CANVAS VIEW

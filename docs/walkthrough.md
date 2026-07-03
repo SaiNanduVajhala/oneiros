@@ -253,16 +253,34 @@ We successfully implemented a tabbed interface in the Agent Console UI, enabling
 *   **Clear All Action**: Integrated a callback to remove historical logs from both state and storage, protected by a clean button interface.
 *   **Search Query Filtering**: Built a real-time text filter inside the History view, matching message content queries instantly.
 
-### 13.3 Premium CSS styling integration
-*   **Obsidian-Gold Design**: Appended CSS selectors to [`AgentConsole.css`](file:///c:/Users/nagendra%20prasad/Downloads/oneiros/frontend/src/components/AgentConsole.css) to style `.agent-console__tabs`, `.agent-console__tab-btn`, active tabs, search query input containers, and `.btn-danger` actions.
-*   **Clean Transitions**: Added gold bottom-border highlighting (`--accent-primary`) and slide-in hover transitions.
+---
 
-### 13.4 Verification Checks
-*   **Production Compilation**: Run `npm run build` inside `frontend/` - compiled cleanly in **838ms** with zero errors or warnings.
-*   **Browser Validation**: Loaded the app on `http://localhost:5173/` and verified full tab switching, message ingestion, scroll updates, and localStorage hydration.
+## 14. Phase 14 — Graph UX, Deletion, Fallbacks & Cognitive Gates
+
+We optimized the graph visualization space, introduced secure memory deletion controls, resolved SQLite caching gaps, and implemented biological sleep gates:
+*   **2D/3D Graph Viewport**: Enabled seamless toggle between a 2D physics Canvas engine and the 3D WebGL Three.js view. Removed visual node label noise from 2D, shifting to active hover tooltip diagnostics.
+*   **Mouse-Leave Tooltip Clears**: Resolved a sticky tooltip issue where hover states persisted after mouse leave.
+*   **EPG Memory Deletion**: Integrated single-memory deletion buttons within tooltips and a "Clear All" database wipe button in the header, complete with confirmation dialog overlays.
+*   **Cognee Metadata Filters**: Wiped Cognee-internal dataset, user, and text document chunk registry nodes (`text_<hash>`, `#textdocument`, `#dataset`, `user:<hash>`, `oneiros_*`) from all visual interfaces, ensuring only actual user memories are displayed.
+*   **Cloud Fallback Persistence**: Resolved a mirror sync gap where SQLite tables would look empty after resets. The frontend now falls back directly to fetching remote Cognee Cloud graph DTO structures seamlessly.
+*   **Episodic Sleep Gate**: Programmed the sleep coordinator to evaluate the episodic node count prior to execution. If there are fewer than 3 real memories, the dream cycle is skipped and returns a descriptive `DreamReport` warning log.
 
 ---
 
-## 14. WeMakeDevs Cognee Hackathon Disclosures
+## 15. Phase 15 — Full-Page Diagnostic Developer Console (`#/debug`)
+
+We developed a full-page, multi-tab **Developer Console** to expose advanced telemetry, run isolated self-tests, tail logs, and execute debugging steps:
+*   **System Status & Environment Info**: Live tracking of providers, SSE sessions, versions, and configurations.
+*   **Performance Monitoring**: Measures backend CPU load, RAM footprints, active SSE clients, and API/Cognee connection latencies.
+*   **Testing Suite Utilities**: Features a verification module running health diagnostics against models, mirrors, model hooks, and event buses with glowing pass/fail badges.
+*   **Live Event Monitor & Logger**: Captures backend records dynamically via a custom `InMemoryLogHandler`. Exposes a terminal to filter by log type (INFO/WARN/ERROR), search key terms, or pause updates.
+*   **Interactive CRUD Sandbox**: Interactive panels allowing manual triggers of `remember()`, `recall()`, `improve()` (with confidence sliders), and `forget()` with actual request/response payload log previews.
+*   **Queue Inspector**: Displays operation details currently waiting inside the write lock queues.
+*   **Isolated Sleep Triggers**: Run N1 Replay, N2 Consolidation, N3 Pruning, or REM stages independently bypassing counts validation.
+
+---
+
+## 16. WeMakeDevs Cognee Hackathon Disclosures
 *   **AI Assistant Declaration**: Built using Google DeepMind's **Antigravity AI coding assistant** to co-author, debug, audit, and clean the repository structures.
+
 
