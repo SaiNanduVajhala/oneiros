@@ -18,6 +18,7 @@ class Settings:
     """
     def __init__(self):
         self.app_title = "Oneiros - Cognitive Memory Operating System Kernel"
+        self.env = os.environ.get("ONEIROS_ENV", "development")
         self.llm_model = os.environ.get("LLM_MODEL", "gemini/gemini-1.5-flash")
         self.llm_api_key = os.environ.get("GEMINI_API_KEY", os.environ.get("LLM_API_KEY", "mock-key"))
         self.cognee_api_key = os.environ.get("COGNEE_API_KEY")

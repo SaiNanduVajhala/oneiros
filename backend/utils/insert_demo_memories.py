@@ -4,7 +4,8 @@ import uuid
 from datetime import datetime
 
 def populate_demo():
-    db_path = "backend/data/local_brain.db"
+    import os
+    db_path = os.environ.get("DATABASE_PATH", "backend/data/local_brain.db")
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
     

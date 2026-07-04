@@ -3,7 +3,8 @@ import httpx
 import sys
 import time
 
-BASE_URL = "http://127.0.0.1:8000/api"
+import os
+BASE_URL = os.environ.get("ONEIROS_API_URL", "http://127.0.0.1:8000/api")
 
 async def run_verification():
     print("==================================================")
