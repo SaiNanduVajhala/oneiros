@@ -113,3 +113,38 @@ def test_fact_chaining_archived_transition():
     assert node_b.metadata["status"] == "SUPERSEDED"
     # Older predecessor
     assert node_a.metadata["status"] == "ARCHIVED"
+
+
+def test_preference_conflict_resolution():
+    """Verify that contradictory preferences (likes/dislikes) trigger conflict resolution."""
+    node_a = MemoryNode(
+        id="mem-1",
+        content="I like pizza",
+        timestamp=datetime.now() - timedelta(minutes=10),
+        metadata={
+            "fact": {"subject": "user", "predicate": "likes", "object": "pizza", "type": "Preference"},
+            "status": "ACTIVE"
+        }
+    )
+    node_b = MemoryNode(
+        id="mem-2",
+        content="I dislike pizza",
+        timestamp=datetime.now(),
+        metadata={
+            "fact": {"subject": "user", "predicate": "dislikes", "object": "pizza", "type": "Preference", "is_correction": True},
+            "status": "RAW"
+        }
+    )
+    
+    snapshot = MemoryGraphSnapshot(nodes=[node_a, node_b], edges=[])
+    resolver = FactResolver()
+    
+    updated_snapshot, events, forgotten = resolver.resolve_conflicts(snapshot)
+    
+    assert node_b.metadata["status"] == "ACTIVE"
+    assert node_a.metadata["status"] == "SUPERSEDED"
+    assert len(updated_snapshot.edges) == 1
+    assert updated_snapshot.edges[0].source == "mem-1"
+    assert updated_snapshot.edges[0].target == "mem-2"
+    assert updated_snapshot.edges[0].type == "SUPERSEDED_BY"
+

@@ -74,11 +74,19 @@ class FactResolver:
             fact = node.metadata["fact"]
             sub = str(fact.get("subject", "USER")).lower()
             pred = str(fact.get("predicate", "")).lower()
+            obj = str(fact.get("object", "")).lower().strip()
             
             if sub in user_names:
                 sub = "user"
                 
-            key = (sub, pred)
+            # Group preference facts dynamically by their semantic category
+            fact_type = str(fact.get("type", "")).lower()
+            category = str(node.metadata.get("category", "")).lower()
+            if fact_type == "preference" or category == "preference":
+                key = (sub, f"preference.{obj}")
+            else:
+                key = (sub, pred)
+                
             groups.setdefault(key, []).append(node)
 
         new_edges: List[MemoryEdge] = []
@@ -95,11 +103,11 @@ class FactResolver:
                     timeline_events.append(f"Promoted raw fact to active: '{single_node.content}'")
                 continue
                 
-            distinct_objects = {str(n.metadata["fact"].get("object", "")).lower() for n in group_nodes}
-            if len(distinct_objects) < 2:
+            distinct_values = {f"{n.metadata['fact'].get('predicate')}:{n.metadata['fact'].get('object')}".lower() for n in group_nodes}
+            if len(distinct_values) < 2:
                 continue
 
-            logger.info(f"Conflict detected for ({sub}, {pred}) between objects: {distinct_objects}")
+            logger.info(f"Conflict detected for ({sub}, {pred}) between values: {distinct_values}")
             
             def get_sort_key(node):
                 ts = ""
