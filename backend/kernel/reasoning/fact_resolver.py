@@ -59,14 +59,23 @@ class FactResolver:
         if not active_nodes:
             return snapshot, timeline_events, []
 
-        # 2. Group by subject & predicate
+        # 2. Group by subject & predicate (dynamically resolving self-referential subjects)
+        user_names = {"user", "me", "i", "self"}
+        for node in active_nodes:
+            fact_data = node.metadata.get("fact")
+            if isinstance(fact_data, dict):
+                pred = str(fact_data.get("predicate", "")).lower()
+                obj = str(fact_data.get("object", "")).lower()
+                if "name" in pred and obj:
+                    user_names.add(obj)
+
         groups: Dict[Tuple[str, str], List[MemoryNode]] = {}
         for node in active_nodes:
             fact = node.metadata["fact"]
             sub = str(fact.get("subject", "USER")).lower()
             pred = str(fact.get("predicate", "")).lower()
             
-            if sub in ("user", "me", "i", "self", "nandu", "rithvik"):
+            if sub in user_names:
                 sub = "user"
                 
             key = (sub, pred)
