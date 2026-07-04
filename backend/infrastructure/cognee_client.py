@@ -65,7 +65,23 @@ class CogneeClient:
 
     async def clear_all(self, dataset_name: str) -> None:
         await self.connect()
-        await cognee.forget(everything=True, dataset=dataset_name)
+        try:
+            import cognee.datasets
+            await cognee.datasets.empty_dataset(dataset_name)
+            logger.info(f"Successfully emptied Cognee dataset: {dataset_name}")
+        except Exception as e:
+            logger.warning(f"cognee.datasets.empty_dataset failed: {e}. Falling back to prune_system.")
+            try:
+                import cognee.prune
+                await cognee.prune.prune_system(metadata=True, graph=True, vector=True, cache=True)
+                logger.info("Successfully pruned Cognee system.")
+            except Exception as e2:
+                logger.error(f"Cognee prune_system failed: {e2}")
+                try:
+                    await cognee.forget(everything=True, dataset=dataset_name)
+                except Exception as e3:
+                    logger.error(f"Ultimate fallback cognee.forget failed: {e3}")
+                    raise
 
     async def get_provenance_graph(self) -> Tuple[List[Any], List[Any]]:
         await self.connect()
