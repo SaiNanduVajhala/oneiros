@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: oneiros-backend
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn backend.app:app --host 0.0.0.0 --port $PORT
+    disk:
+      name: database-disk
+      mountPath: /data
+      sizeGB: 1
+    envVars:
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: COGNEE_API_KEY
+        sync: false
+      - key: FRONTEND_URLS
+        sync: false
+      - key: DATABASE_PATH
+        value: /data/local_brain.db
