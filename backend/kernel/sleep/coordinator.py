@@ -317,48 +317,6 @@ class SleepCoordinator:
                 logger.error(f"N2 Consolidation failed: {e}")
                 timeline.append(f"{_ts()} — Consolidation stage failed: {e}")
 
-            # --- Fact Resolution ---
-            t0_fact = time.perf_counter()
-            timeline.append(f"{_ts()} — Fact Resolution stage started")
-            self._emit(VisEvent(
-                stage="Fact_Resolution", type="stage_start",
-                message="Fact Resolution stage started — checking for structured fact updates"
-            ))
-            try:
-                from kernel.reasoning.fact_resolver import FactResolver
-                fact_resolver = FactResolver(self.reasoning_engine)
-                snapshot, fact_events, forgotten_ids = fact_resolver.resolve_conflicts(snapshot)
-                
-                # Delete forgotten nodes from Cognee Cloud and database
-                for fid in forgotten_ids:
-                    try:
-                        await self.provider.forget(fid)
-                        logger.info(f"Factual memory lifecycle: node {fid} has been permanently forgotten.")
-                    except Exception as forget_err:
-                        logger.error(f"Failed to delete forgotten node {fid}: {forget_err}")
-
-                fact_duration = (time.perf_counter() - t0_fact) * 1000
-                stages_completed.append("Fact_Resolution")
-
-
-                for evt in fact_events:
-                    self._emit(VisEvent(
-                        stage="Fact_Resolution", type="conflict_resolve",
-                        message=evt,
-                        algorithm="structured_fact_resolution"
-                    ))
-
-                self._emit(VisEvent(
-                    stage="Fact_Resolution", type="stage_complete",
-                    message=f"Fact resolution complete: resolved {len(fact_events)} conflicts in {fact_duration:.0f}ms",
-                    duration_ms=round(fact_duration, 1)
-                ))
-                timeline.extend([f"{_ts()} — {evt}" for evt in fact_events])
-                self.stage_snapshots.append(_snapshot_graph("Fact_Resolution", snapshot, vis_events=self.vis_events, health=health_before, algorithm_traces=self.algorithm_traces))
-            except Exception as e:
-                logger.error(f"Fact Resolution stage failed: {e}")
-                timeline.append(f"{_ts()} — Fact Resolution stage failed: {e}")
-
             # --- N3: Pruning ---
             t0 = time.perf_counter()
             timeline.append(f"{_ts()} — Pruning (N3) stage started")
@@ -424,6 +382,48 @@ class SleepCoordinator:
             except Exception as e:
                 logger.error(f"N3 Pruning failed: {e}")
                 timeline.append(f"{_ts()} — Pruning stage failed: {e}")
+
+            # --- Fact Resolution ---
+            t0_fact = time.perf_counter()
+            timeline.append(f"{_ts()} — Fact Resolution stage started")
+            self._emit(VisEvent(
+                stage="Fact_Resolution", type="stage_start",
+                message="Fact Resolution stage started — checking for structured fact updates"
+            ))
+            try:
+                from kernel.reasoning.fact_resolver import FactResolver
+                fact_resolver = FactResolver(self.reasoning_engine)
+                snapshot, fact_events, forgotten_ids = fact_resolver.resolve_conflicts(snapshot)
+                
+                # Delete forgotten nodes from Cognee Cloud and database
+                for fid in forgotten_ids:
+                    try:
+                        await self.provider.forget(fid)
+                        logger.info(f"Factual memory lifecycle: node {fid} has been permanently forgotten.")
+                    except Exception as forget_err:
+                        logger.error(f"Failed to delete forgotten node {fid}: {forget_err}")
+
+                fact_duration = (time.perf_counter() - t0_fact) * 1000
+                stages_completed.append("Fact_Resolution")
+
+                for evt in fact_events:
+                    self._emit(VisEvent(
+                        stage="Fact_Resolution", type="conflict_resolve",
+                        message=evt,
+                        algorithm="structured_fact_resolution"
+                    ))
+
+                self._emit(VisEvent(
+                    stage="Fact_Resolution", type="stage_complete",
+                    message=f"Fact resolution complete: resolved {len(fact_events)} conflicts in {fact_duration:.0f}ms",
+                    duration_ms=round(fact_duration, 1)
+                ))
+                timeline.extend([f"{_ts()} — {evt}" for evt in fact_events])
+                self.stage_snapshots.append(_snapshot_graph("Fact_Resolution", snapshot, vis_events=self.vis_events, health=health_n3, algorithm_traces=self.algorithm_traces))
+            except Exception as e:
+                logger.error(f"Fact Resolution stage failed: {e}")
+                timeline.append(f"{_ts()} — Fact Resolution stage failed: {e}")
+
 
             # --- REM: Abstraction ---
             t0 = time.perf_counter()

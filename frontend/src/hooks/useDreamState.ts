@@ -95,6 +95,39 @@ export function useDreamState(): DreamState {
     };
   }, []);
 
+  const fetchMemories = useCallback(async () => {
+    try {
+      const res = await fetch(`http://localhost:8000/api/chat/memories`);
+      const data = await res.json();
+      if (data.nodes) {
+        const isInternal = (n: any) =>
+          /^text_[a-f0-9]{10,}$/i.test(n.id) ||              // cognee text chunks
+          /^user:[a-f0-9]+$/i.test(n.id) ||                  // cognee user nodes
+          (Array.isArray(n.semantic_tags) && (
+            n.semantic_tags.includes('textdocument') ||
+            n.semantic_tags.includes('dataset') ||
+            n.semantic_tags.includes('user')
+          )) ||
+          /^oneiros_/i.test(n.content || '') ||              // cognee dataset names
+          /^user:[a-f0-9]+$/i.test(n.content || '');        // user:<hash> content
+
+        setStoredMemories(
+          data.nodes
+            .filter((n: any) => !isInternal(n))
+            .map((n: any) => ({
+              ...n,
+              timestamp: n.timestamp || new Date().toISOString(),
+              last_accessed: n.last_accessed || new Date().toISOString(),
+              metadata: n.metadata || {},
+              explain_log: n.explain_log || [],
+            }))
+        );
+      }
+    } catch (err) {
+      console.error('Failed to fetch memories:', err);
+    }
+  }, []);
+
   // Fetch final data after dream completes
   const fetchResults = useCallback(async () => {
     try {
@@ -133,43 +166,14 @@ export function useDreamState(): DreamState {
 
       const snapshotsData = await snapshotsRes.json();
       if (Array.isArray(snapshotsData)) setSnapshots(snapshotsData);
+
+      // Trigger memories refresh too
+      await fetchMemories();
     } catch (err) {
       console.error('Failed to fetch results:', err);
     }
-  }, [showHistory]);
+  }, [showHistory, fetchMemories]);
 
-  const fetchMemories = useCallback(async () => {
-    try {
-      const res = await fetch(`http://localhost:8000/api/chat/memories`);
-      const data = await res.json();
-      if (data.nodes) {
-        const isInternal = (n: any) =>
-          /^text_[a-f0-9]{10,}$/i.test(n.id) ||              // cognee text chunks
-          /^user:[a-f0-9]+$/i.test(n.id) ||                  // cognee user nodes
-          (Array.isArray(n.semantic_tags) && (
-            n.semantic_tags.includes('textdocument') ||
-            n.semantic_tags.includes('dataset') ||
-            n.semantic_tags.includes('user')
-          )) ||
-          /^oneiros_/i.test(n.content || '') ||              // cognee dataset names
-          /^user:[a-f0-9]+$/i.test(n.content || '');        // user:<hash> content
-
-        setStoredMemories(
-          data.nodes
-            .filter((n: any) => !isInternal(n))
-            .map((n: any) => ({
-              ...n,
-              timestamp: n.timestamp || new Date().toISOString(),
-              last_accessed: n.last_accessed || new Date().toISOString(),
-              metadata: n.metadata || {},
-              explain_log: n.explain_log || [],
-            }))
-        );
-      }
-    } catch (err) {
-      console.error('Failed to fetch memories:', err);
-    }
-  }, []);
 
   // Fetch initial graph and state on mount
   useEffect(() => {
