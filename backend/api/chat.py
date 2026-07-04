@@ -140,6 +140,12 @@ async def delete_all_memories(provider: MemoryProvider = Depends(get_memory_prov
     Wipes all memory nodes from the provider and the local SQLite mirror.
     """
     try:
+        from kernel.wake.working_memory import working_memory
+        working_memory.clear()
+    except Exception as e:
+        logger.error(f"Failed to clear working memory context: {e}")
+
+    try:
         await provider.clear_all()
     except Exception as e:
         pass  # Log but continue to wipe local DB

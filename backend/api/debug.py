@@ -750,6 +750,12 @@ async def reset_database(provider: MemoryProvider = Depends(get_memory_provider)
     Completely clears Cognee Cloud memory datasets and SQLite mirrors. Leaves it completely empty.
     """
     try:
+        from kernel.wake.working_memory import working_memory
+        working_memory.clear()
+    except Exception as e:
+        logger.error(f"Failed to clear working memory context in debug reset: {e}")
+
+    try:
         await provider.clear_all()
         return {"status": "success", "message": "Database completely wiped and left empty."}
     except Exception as e:
