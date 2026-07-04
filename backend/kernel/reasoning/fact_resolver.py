@@ -92,12 +92,18 @@ class FactResolver:
 
             logger.info(f"Conflict detected for ({sub}, {pred}) between objects: {distinct_objects}")
             
+            def get_sort_key(node):
+                ts = ""
+                if hasattr(node, "timestamp") and node.timestamp:
+                    ts = node.timestamp.isoformat() if hasattr(node.timestamp, "isoformat") else str(node.timestamp)
+                elif isinstance(node.metadata, dict) and "timestamp" in node.metadata:
+                    ts = str(node.metadata["timestamp"])
+                is_corr = 1 if isinstance(node.metadata, dict) and node.metadata.get("fact", {}).get("is_correction") else 0
+                return (ts, is_corr)
+
             sorted_nodes = sorted(
                 group_nodes,
-                key=lambda n: (
-                    1 if n.metadata["fact"].get("is_correction") else 0,
-                    n.timestamp.isoformat() if hasattr(n, "timestamp") else n.id
-                ),
+                key=get_sort_key,
                 reverse=True
             )
             
