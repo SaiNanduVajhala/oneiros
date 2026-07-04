@@ -107,16 +107,22 @@ export function useDreamState(): DreamState {
       const res = await fetch(`${API}/chat/memories`);
       const data = await res.json();
       if (data.nodes) {
-        const isInternal = (n: any) =>
-          /^text_[a-f0-9]{10,}$/i.test(n.id) ||              // cognee text chunks
-          /^user:[a-f0-9]+$/i.test(n.id) ||                  // cognee user nodes
-          (Array.isArray(n.semantic_tags) && (
-            n.semantic_tags.includes('textdocument') ||
-            n.semantic_tags.includes('dataset') ||
-            n.semantic_tags.includes('user')
-          )) ||
-          /^oneiros_/i.test(n.content || '') ||              // cognee dataset names
-          /^user:[a-f0-9]+$/i.test(n.content || '');        // user:<hash> content
+        const isInternal = (n: any) => {
+          const id = (n.id || '').toLowerCase();
+          const content = (n.content || '').toLowerCase();
+          const tags = n.semantic_tags || [];
+          return (
+            id.startsWith('user:') ||
+            id.startsWith('text_') ||
+            id.startsWith('file:') ||
+            id.startsWith('dataset:') ||
+            content.startsWith('oneiros_') ||
+            content.startsWith('user:') ||
+            tags.includes('textdocument') ||
+            tags.includes('dataset') ||
+            tags.includes('user')
+          );
+        };
 
         setStoredMemories(
           data.nodes
@@ -153,14 +159,20 @@ export function useDreamState(): DreamState {
 
       const graphData = await graphRes.json();
       if (graphData.nodes) {
-        const isInternalGraphNode = (n: any) =>
-          /^text_[a-f0-9]{10,}$/i.test(n.id) ||
-          /^user:[a-f0-9]+$/i.test(n.id) ||
-          (Array.isArray(n.semantic_tags) && n.semantic_tags.some((t: string) =>
-            ['textdocument', 'dataset', 'user'].includes(t)
-          )) ||
-          /^oneiros_/i.test(n.content || '') ||
-          /^user:[a-f0-9]+$/i.test(n.content || '');
+        const isInternalGraphNode = (n: any) => {
+          const id = (n.id || '').toLowerCase();
+          const content = (n.content || '').toLowerCase();
+          const tags = n.semantic_tags || [];
+          return (
+            id.startsWith('user:') ||
+            id.startsWith('text_') ||
+            id.startsWith('file:') ||
+            id.startsWith('dataset:') ||
+            content.startsWith('oneiros_') ||
+            content.startsWith('user:') ||
+            tags.some((t: string) => ['textdocument', 'dataset', 'user'].includes(t))
+          );
+        };
 
         const cleanNodes = graphData.nodes.filter((n: any) => !isInternalGraphNode(n));
         const cleanNodeIds = new Set(cleanNodes.map((n: any) => n.id));
@@ -189,6 +201,10 @@ export function useDreamState(): DreamState {
   }, [fetchResults, fetchMemories]);
 
   const startDream = useCallback(async () => {
+    if (storedMemories.length < 3) {
+      alert("Dreaming is not possible. A minimum of 3 memories is required to start a consolidation cycle.");
+      return;
+    }
     setStatus('dreaming');
     setEvents([]);
     setReport(null);
@@ -217,7 +233,7 @@ export function useDreamState(): DreamState {
       setStatus('idle');
       eventSourceRef.current?.close();
     }
-  }, [connectSSE, fetchResults]);
+  }, [connectSSE, fetchResults, storedMemories]);
 
 
 

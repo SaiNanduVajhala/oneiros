@@ -59,6 +59,7 @@ async def test_cognee_cloud_provider_mocked_crud():
     mock_client.clear_all = AsyncMock()
 
     provider = CogneeCloudProvider(mock_client)
+    await provider.clear_all()
 
     # 1. Test remember
     node_id = await provider.remember("I write high performance CUDA kernels")
@@ -82,15 +83,16 @@ async def test_cognee_cloud_provider_mocked_crud():
 
     # 5. Test get_graph_data
     nodes, edges = await provider.get_graph_data()
-    assert len(nodes) == 1
-    assert nodes[0][0] == "mem-12345"
-    assert nodes[0][1]["content"] == "mocked experience"
+    assert len(nodes) == 2
+    memory_node = next(n for n in nodes if n[0] == "mem-12345")
+    assert memory_node[1]["content"] == "mocked experience"
     assert len(edges) == 1
     assert edges[0][0] == "mem-12345"
     assert edges[0][1] == "concept-6789"
     assert edges[0][2] == "ABSTRACTED_BY"
 
     # 6. Test clear_all
+    mock_client.clear_all.reset_mock()
     await provider.clear_all()
     mock_client.clear_all.assert_awaited_once_with(dataset_name="oneiros_cloud")
 

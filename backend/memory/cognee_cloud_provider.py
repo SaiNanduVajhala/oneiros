@@ -297,7 +297,7 @@ class CogneeCloudProvider(MemoryProvider):
                 import json
                 with sqlite3.connect(self.db_path) as conn:
                     cursor = conn.cursor()
-                    cursor.execute("SELECT id, content, access_count, importance, source, semantic_tags, metadata FROM nodes WHERE id LIKE 'mem-%'")
+                    cursor.execute("SELECT id, content, access_count, importance, source, semantic_tags, metadata FROM nodes WHERE id LIKE 'mem-%' OR id LIKE 'concept-%'")
                     for row in cursor.fetchall():
                         try:
                             tags = json.loads(row[5]) if row[5] else []
@@ -316,7 +316,7 @@ class CogneeCloudProvider(MemoryProvider):
                             "last_accessed": datetime.now().isoformat(),
                             "metadata": meta
                         }))
-                    cursor.execute("SELECT source, target, relation, weight FROM edges WHERE source LIKE 'mem-%' OR target LIKE 'mem-%' OR relation = 'SUPERSEDED_BY'")
+                    cursor.execute("SELECT source, target, relation, weight FROM edges WHERE source LIKE 'mem-%' OR target LIKE 'mem-%' OR relation = 'SUPERSEDED_BY' OR source LIKE 'concept-%' OR target LIKE 'concept-%'")
                     for row in cursor.fetchall():
                         local_mem_edges.append((row[0], row[1], row[2], {"weight": row[3]}))
             except Exception as db_err:
@@ -371,8 +371,8 @@ class CogneeCloudProvider(MemoryProvider):
                     import json
                     with sqlite3.connect(self.db_path) as conn:
                         cursor = conn.cursor()
-                        cursor.execute("DELETE FROM nodes WHERE id NOT LIKE 'mem-%'")
-                        cursor.execute("DELETE FROM edges WHERE NOT (source LIKE 'mem-%' OR target LIKE 'mem-%' OR relation = 'SUPERSEDED_BY')")
+                        cursor.execute("DELETE FROM nodes WHERE id NOT LIKE 'mem-%' AND id NOT LIKE 'concept-%'")
+                        cursor.execute("DELETE FROM edges WHERE NOT (source LIKE 'mem-%' OR target LIKE 'mem-%' OR relation = 'SUPERSEDED_BY' OR source LIKE 'concept-%' OR target LIKE 'concept-%')")
                         for nid, props in nodes_res:
                             tags_str = json.dumps(props.get("semantic_tags", []))
                             is_consolidated = 1 if props.get("source") == "sleep" or props.get("type") == "Concept" or nid.startswith("mem-") else 0

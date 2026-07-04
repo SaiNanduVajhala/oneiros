@@ -56,14 +56,20 @@ export function AgentConsole({
   );
 
   // Exclude Cognee-internal nodes: text chunks, datasets, user records
-  const isInternalNode = (node: MemoryNode) =>
-    /^text_[a-f0-9]{10,}$/i.test(node.id) ||
-    /^user:[a-f0-9]+$/i.test(node.id) ||
-    (node.semantic_tags && node.semantic_tags.some(t =>
-      ['textdocument', 'dataset', 'user'].includes(t)
-    )) ||
-    /^oneiros_/i.test(node.content || '') ||
-    /^user:[a-f0-9]+$/i.test(node.content || '');
+  const isInternalNode = (node: MemoryNode) => {
+    const id = (node.id || '').toLowerCase();
+    const content = (node.content || '').toLowerCase();
+    const tags = node.semantic_tags || [];
+    return (
+      id.startsWith('user:') ||
+      id.startsWith('text_') ||
+      id.startsWith('file:') ||
+      id.startsWith('dataset:') ||
+      content.startsWith('oneiros_') ||
+      content.startsWith('user:') ||
+      tags.some(t => ['textdocument', 'dataset', 'user'].includes(t))
+    );
+  };
 
   const filteredNodes = storedMemories
     .filter(node => !isInternalNode(node))

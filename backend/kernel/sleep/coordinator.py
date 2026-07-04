@@ -164,12 +164,16 @@ class SleepCoordinator:
             def _is_internal(n: MemoryNode) -> bool:
                 """Matches the same filter used on the frontend to exclude Cognee infrastructure nodes."""
                 tags = n.semantic_tags or []
+                nid = n.id.lower()
+                content = (n.content or '').lower()
                 return (
-                    bool(_re.match(r'^text_[a-f0-9]{10,}$', n.id, _re.I)) or
-                    bool(_re.match(r'^user:[a-f0-9]+$', n.id, _re.I)) or
-                    any(t in ('textdocument', 'dataset', 'user') for t in tags) or
-                    bool(_re.match(r'^oneiros_', n.content or '', _re.I)) or
-                    bool(_re.match(r'^user:[a-f0-9]+$', (n.content or '').strip(), _re.I))
+                    nid.startswith("text_") or
+                    nid.startswith("user:") or
+                    nid.startswith("file:") or
+                    nid.startswith("dataset:") or
+                    content.startswith("oneiros_") or
+                    content.startswith("user:") or
+                    any(t in ('textdocument', 'dataset', 'user') for t in tags)
                 )
 
             MIN_MEMORIES = 3
