@@ -118,18 +118,35 @@ class SleepCoordinator:
             snapshot = input_snapshot
             if snapshot is None:
                 try:
+                    from dateutil.parser import parse as parse_date
                     nodes_raw, edges_raw = await self.provider.get_graph_data()
-                    nodes = [
-                        MemoryNode(
+                    nodes = []
+                    for nid, props in nodes_raw:
+                        meta = props.get("metadata", {})
+                        ts = datetime.now()
+                        if "timestamp" in meta and meta["timestamp"]:
+                            try:
+                                ts = parse_date(str(meta["timestamp"]))
+                            except Exception:
+                                pass
+                        la = ts
+                        if "last_accessed" in meta and meta["last_accessed"]:
+                            try:
+                                la = parse_date(str(meta["last_accessed"]))
+                            except Exception:
+                                pass
+
+                        nodes.append(MemoryNode(
                             id=nid,
                             content=props.get("content") or props.get("description") or nid,
                             importance=float(props.get("importance", 0.5)),
                             access_count=int(props.get("access_count", 1)),
                             source=props.get("source", "user"),
                             semantic_tags=props.get("semantic_tags", []),
-                            metadata=props.get("metadata", {})
-                        ) for nid, props in nodes_raw
-                    ]
+                            timestamp=ts,
+                            last_accessed=la,
+                            metadata=meta
+                        ))
                     edges = [
                         MemoryEdge(
                             source=src, target=tgt, type=rel,

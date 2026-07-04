@@ -94,10 +94,10 @@ class FactResolver:
             
             def get_sort_key(node):
                 ts = ""
-                if hasattr(node, "timestamp") and node.timestamp:
-                    ts = node.timestamp.isoformat() if hasattr(node.timestamp, "isoformat") else str(node.timestamp)
-                elif isinstance(node.metadata, dict) and "timestamp" in node.metadata:
+                if isinstance(node.metadata, dict) and "timestamp" in node.metadata and node.metadata["timestamp"]:
                     ts = str(node.metadata["timestamp"])
+                elif hasattr(node, "timestamp") and node.timestamp:
+                    ts = node.timestamp.isoformat() if hasattr(node.timestamp, "isoformat") else str(node.timestamp)
                 is_corr = 1 if isinstance(node.metadata, dict) and node.metadata.get("fact", {}).get("is_correction") else 0
                 return (ts, is_corr)
 

@@ -1,7 +1,14 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import type { VisEvent, MetricsSnapshot, DreamReport, StageSnapshot, ChatMessage, SleepStatus, MemoryNode, MemoryEdge } from '../types';
 
-const API = 'http://localhost:8000/api';
+const getApiBase = () => {
+  if (import.meta.env.VITE_API_BASE_URL) {
+    return import.meta.env.VITE_API_BASE_URL;
+  }
+  const hostname = window.location.hostname;
+  return `http://${hostname}:8000/api`;
+};
+const API = getApiBase();
 
 export interface DreamState {
   status: SleepStatus;
@@ -97,7 +104,7 @@ export function useDreamState(): DreamState {
 
   const fetchMemories = useCallback(async () => {
     try {
-      const res = await fetch(`http://localhost:8000/api/chat/memories`);
+      const res = await fetch(`${API}/chat/memories`);
       const data = await res.json();
       if (data.nodes) {
         const isInternal = (n: any) =>
@@ -225,7 +232,7 @@ export function useDreamState(): DreamState {
     setIsSending(true);
 
     try {
-      const res = await fetch('http://localhost:8000/api/chat', {
+      const res = await fetch(`${API}/chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ message: msg }),

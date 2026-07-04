@@ -62,7 +62,14 @@ interface QueueItem {
   timestamp: string;
 }
 
-const API = 'http://localhost:8000/api';
+const getApiBase = () => {
+  if (import.meta.env.VITE_API_BASE_URL) {
+    return import.meta.env.VITE_API_BASE_URL;
+  }
+  const hostname = window.location.hostname;
+  return `http://${hostname}:8000/api`;
+};
+const API = getApiBase();
 
 export function DevConsolePage({ onBackToApp, nodes, edges }: DevConsolePageProps) {
   const [activeTab, setActiveTab] = useState<string>('dashboard');

@@ -20,15 +20,10 @@ from api.debug import router as debug_router
 
 app = FastAPI(title="Oneiros - Cognitive Memory Operating System Kernel")
 
-# CORS for Vite dev server
+# CORS for Vite dev server and network links
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:5173", "http://127.0.0.1:5173",
-        "http://localhost:5174", "http://127.0.0.1:5174",
-        "http://localhost:5175", "http://127.0.0.1:5175"
-    ],
-    allow_credentials=True,
+    allow_origins=["*"],
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -70,4 +65,4 @@ async def health_check(provider: MemoryProvider = Depends(get_memory_provider)):
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("app:app", host="127.0.0.1", port=8000, reload=True)
+    uvicorn.run("app:app", host="0.0.0.0", port=8000, reload=True)
